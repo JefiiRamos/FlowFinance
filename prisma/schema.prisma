@@ -1,0 +1,25 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Transaction {
+  id          String   @id @default(uuid())
+  type        String
+  amount      Float
+  date        DateTime
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model RecurringIncome {
+  id          String @id @default(uuid())
+  dayOfMonth  Int    // 1-31, ex: 5 = todo dia 5
+  amount      Float
+  startMonth  Int    // 1-12
+  endMonth    Int    // 1-12
+  description String @default("Renda fixa")
+}
