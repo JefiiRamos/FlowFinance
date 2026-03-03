@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSessionUserId } from '@/lib/auth-server'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/recurring/sync
  * Cria transações automaticamente para rendas recorrentes do usuário

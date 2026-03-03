@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { updateTransactionSchema } from '@/lib/validations/transaction'
 import { getSessionUserId } from '@/lib/auth-server'
 
+export const dynamic = 'force-dynamic'
+
 type RouteParams = { params: Promise<{ id: string }> }
 
 /**

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { createTransactionSchema } from '@/lib/validations/transaction'
 import { getSessionUserId } from '@/lib/auth-server'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/transactions
  * Retorna transações do usuário logado

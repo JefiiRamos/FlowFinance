@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSessionUserId } from '@/lib/auth-server'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * POST /api/recurring/seed
  * Cria regras padrão do usuário: dia 5, Maio 3k, Set-Dez 5k

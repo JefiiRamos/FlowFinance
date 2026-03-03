@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { getSessionUserId } from '@/lib/auth-server'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   const userId = await getSessionUserId()
   if (!userId) {
