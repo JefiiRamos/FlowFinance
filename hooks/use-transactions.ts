@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { getToken } from '@/lib/auth'
 import {
   fetchTransactions,
   createTransaction,
@@ -31,8 +32,10 @@ export function useTransactions() {
     setIsLoading(true)
     setError(null)
     try {
-      await fetch('/api/recurring/seed', { method: 'POST' }).catch(() => {})
-      await fetch('/api/recurring/sync', { method: 'POST' }).catch(() => {})
+      const token = getToken()
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
+      await fetch('/api/recurring/seed', { method: 'POST', headers }).catch(() => {})
+      await fetch('/api/recurring/sync', { method: 'POST', headers }).catch(() => {})
       const data = await fetchTransactions()
       setTransactions(data.map(toFrontend))
     } catch (e) {

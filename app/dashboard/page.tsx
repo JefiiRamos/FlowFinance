@@ -1,14 +1,18 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Bell, User, Menu } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Bell, User, Menu, LogOut } from 'lucide-react'
+import { clearAuth, getToken } from '@/lib/auth'
+import { isAuthenticated } from '@/lib/auth'
 import { TransactionsForm } from '@/components/transactions-form'
 import {
   calculateSummaryFromTransactions,
   financialSummaryFromTransactions,
   getAverageMonthlySurplus,
 } from '@/lib/finance'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { DashboardSummaryRow } from '@/components/dashboard-summary-row'
 import { IncomeChartCompact } from '@/components/income-chart-compact'
@@ -22,6 +26,18 @@ const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.G
 })
 
 export default function DashboardPage() {
+  const router = useRouter()
+
+  const [authChecked, setAuthChecked] = useState(false)
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace('/login')
+    } else {
+      setAuthChecked(true)
+    }
+  }, [router])
+
   const { transactions, isLoading, addTransaction, editTransaction, removeTransaction } = useTransactions()
 
   const { totalIncome, totalExpenses, balance } = useMemo(
@@ -36,6 +52,14 @@ export default function DashboardPage() {
     () => getAverageMonthlySurplus(transactions),
     [transactions]
   )
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
@@ -80,7 +104,7 @@ export default function DashboardPage() {
           </Link>
           <span className="text-lg font-semibold text-foreground">FlowFinance</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
@@ -97,10 +121,22 @@ export default function DashboardPage() {
           </button>
           <button
             type="button"
+            aria-label="Sair"
             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
-            aria-label="Menu"
+            onClick={async () => {
+              const token = getToken()
+              if (token) {
+                await fetch('/api/auth/logout', {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${token}` },
+                }).catch(() => {})
+              }
+              clearAuth()
+              router.push('/login')
+              router.refresh()
+            }}
           >
-            <Menu className="size-4" />
+            <LogOut className="size-4" />
           </button>
         </div>
       </header>

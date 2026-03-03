@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getSessionUserId } from '@/lib/auth-server'
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 /**
  * GET /api/summary
- * Retorna resumo financeiro:
- * - totalIncome, totalExpense, balance
- * - monthlyFlow: fluxo por mês para gráficos
+ * Retorna resumo financeiro do usuário logado
  */
 export async function GET() {
   try {
+    const userId = await getSessionUserId()
     const transactions = await prisma.transaction.findMany({
+      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
       orderBy: { date: 'asc' },
     })
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { updateTransactionSchema } from '@/lib/validations/transaction'
+import { getSessionUserId } from '@/lib/auth-server'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -11,10 +12,14 @@ type RouteParams = { params: Promise<{ id: string }> }
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
+    const userId = await getSessionUserId()
 
     const existing = await prisma.transaction.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
+    }
+    if (userId && existing.userId && existing.userId !== userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 
     const body = await request.json()
@@ -63,6 +68,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
+    const userId = await getSessionUserId()
+
+    const existing = await prisma.transaction.findUnique({ where: { id } })
+    if (existing && userId && existing.userId && existing.userId !== userId) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
+    }
 
     await prisma.transaction.delete({ where: { id } })
     return new NextResponse(null, { status: 204 })

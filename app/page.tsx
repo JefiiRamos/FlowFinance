@@ -57,7 +57,7 @@ export default function LPPage() {
                 FlowFinance
               </span>
             </div>
-            <Link href="/dashboard">
+            <Link href="/login">
               <Button variant="outline" size="sm" className="border-white/20">
                 Entrar
               </Button>
@@ -76,7 +76,7 @@ export default function LPPage() {
                 com clareza. Feito para freelancers, consultores e quem tem
                 renda que varia.
               </p>
-              <Link href="/dashboard">
+              <Link href="/login">
                 <Button
                   size="lg"
                   className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
@@ -125,7 +125,7 @@ export default function LPPage() {
                     </p>
                   </div>
                 </div>
-                <Link href="/dashboard">
+                <Link href="/login">
                   <Button
                     size="lg"
                     className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"

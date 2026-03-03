@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getSessionUserId } from '@/lib/auth-server'
 
 /**
  * POST /api/recurring/sync
- * Cria transações automaticamente para rendas recorrentes nos meses já passados (ou atual se já passou o dia)
+ * Cria transações automaticamente para rendas recorrentes do usuário
  */
 export async function POST() {
   try {
-    const rules = await prisma.recurringIncome.findMany()
+    const userId = await getSessionUserId()
+    const rules = await prisma.recurringIncome.findMany({
+      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
+    })
     if (rules.length === 0) return NextResponse.json({ created: 0, message: 'Nenhuma regra' })
 
     const now = new Date()
@@ -50,6 +54,7 @@ export async function POST() {
             amount: rule.amount,
             date,
             description: rule.description,
+            userId: userId ?? undefined,
           },
         })
         created++

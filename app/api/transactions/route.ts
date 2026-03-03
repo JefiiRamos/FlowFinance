@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createTransactionSchema } from '@/lib/validations/transaction'
+import { getSessionUserId } from '@/lib/auth-server'
 
 /**
  * GET /api/transactions
- * Retorna todas as transações ordenadas por data ascendente
+ * Retorna transações do usuário logado
  */
 export async function GET() {
   try {
+    const userId = await getSessionUserId()
     const transactions = await prisma.transaction.findMany({
+      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
       orderBy: { date: 'asc' },
     })
     return NextResponse.json(transactions)
@@ -39,6 +42,7 @@ export async function POST(request: NextRequest) {
 
     const { type, amount, date, description } = parsed.data
     const dateObj = new Date(date)
+    const userId = await getSessionUserId()
 
     const transaction = await prisma.transaction.create({
       data: {
@@ -46,6 +50,7 @@ export async function POST(request: NextRequest) {
         amount,
         date: dateObj,
         description: description ?? null,
+        userId: userId ?? undefined,
       },
     })
 

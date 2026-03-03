@@ -6,20 +6,43 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime  @default(now())
+  sessions      Session[]
+  transactions  Transaction[]
+  recurringIncomes RecurringIncome[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+}
+
 model Transaction {
   id          String   @id @default(uuid())
   type        String
   amount      Float
   date        DateTime
   description String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 }
 
 model RecurringIncome {
-  id          String @id @default(uuid())
-  dayOfMonth  Int    // 1-31, ex: 5 = todo dia 5
+  id          String  @id @default(uuid())
+  dayOfMonth  Int
   amount      Float
-  startMonth  Int    // 1-12
-  endMonth    Int    // 1-12
-  description String @default("Renda fixa")
+  startMonth  Int
+  endMonth    Int
+  description String  @default("Renda fixa")
+  userId      String?
+  user        User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
