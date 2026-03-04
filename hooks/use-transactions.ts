@@ -20,6 +20,8 @@ function toFrontend(t: ApiTransaction): Transaction {
     description: t.description ?? '',
     amount: t.amount,
     date: d.toISOString().slice(0, 10),
+    category: t.category ?? undefined,
+    paymentMethod: t.paymentMethod ?? undefined,
   }
 }
 

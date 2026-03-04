@@ -33,7 +33,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { type, amount, date, description } = parsed.data
+    const { type, amount, date, description, category, paymentMethod } = parsed.data
     const updateData: Record<string, unknown> = {}
     if (type != null) updateData.type = type
     if (amount != null) {
@@ -47,6 +47,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
     if (date != null) updateData.date = new Date(date)
     if (description !== undefined) updateData.description = description ?? null
+    if (category !== undefined) updateData.category = category ?? 'Outros'
+    if (paymentMethod !== undefined) updateData.paymentMethod = paymentMethod ?? 'Outros'
 
     const transaction = await prisma.transaction.update({
       where: { id },

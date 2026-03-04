@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { type Transaction, type TransactionType, formatCurrency } from '@/lib/finance'
+import { CATEGORIES, PAYMENT_METHODS } from '@/lib/constants'
 import { Plus, Trash2, Pencil, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -20,25 +29,42 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
 }
 
-interface TransactionsFormProps {
-  transactions: Transaction[]
-  onAdd: (data: { type: TransactionType; amount: number; date: string; description: string }) => Promise<void>
-  onEdit: (id: string, data: { type: TransactionType; amount: number; date?: string; description: string }) => Promise<void>
-  onDelete: (id: string) => Promise<void>
-  isLoading?: boolean
+export type TransactionFormData = {
+  type: TransactionType
+  amount: number
+  date: string
+  description: string
+  category?: string
+  paymentMethod?: string
 }
 
-export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoading }: TransactionsFormProps) {
+interface TransactionsFormProps {
+  transactions: Transaction[]
+  onAdd: (data: TransactionFormData) => Promise<void>
+  onEdit: (id: string, data: Partial<TransactionFormData>) => Promise<void>
+  onDelete: (id: string) => Promise<void>
+  isLoading?: boolean
+  externalEdit?: Transaction | null
+  onEditClose?: () => void
+}
+
+export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoading, externalEdit, onEditClose }: TransactionsFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [transactionType, setTransactionType] = useState<TransactionType>('income')
   const [editing, setEditing] = useState<Transaction | null>(null)
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [category, setCategory] = useState('Outros')
+  const [paymentMethod, setPaymentMethod] = useState('Outros')
 
   function resetForm() {
     setDescription('')
     setAmount('')
+    setDate(new Date().toISOString().slice(0, 10))
+    setCategory('Outros')
+    setPaymentMethod('Outros')
     setEditing(null)
   }
 
@@ -50,22 +76,28 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
 
   async function handleSave() {
     const parsedAmount = parseFloat(amount)
-    if (!description || isNaN(parsedAmount) || parsedAmount <= 0) return
+    if (!description.trim() || isNaN(parsedAmount) || parsedAmount <= 0) return
 
-    const date = new Date().toISOString().slice(0, 10)
     setIsSaving(true)
     try {
+      const data: TransactionFormData = {
+        type: transactionType,
+        description: description.trim(),
+        amount: parsedAmount,
+        date,
+        category,
+        paymentMethod,
+      }
       if (editing) {
-        await onEdit(editing.id, { type: transactionType, description, amount: parsedAmount })
+        await onEdit(editing.id, data)
       } else {
-        await onAdd({ type: transactionType, description, amount: parsedAmount, date })
+        await onAdd(data)
       }
       resetForm()
       setIsOpen(false)
       toast.success(editing ? 'Transação atualizada' : 'Transação adicionada')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Erro ao salvar')
-      return
     } finally {
       setIsSaving(false)
     }
@@ -76,8 +108,24 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
     setTransactionType(t.type)
     setDescription(t.description)
     setAmount(t.amount.toString())
+    setDate(t.date)
+    setCategory(t.category ?? 'Outros')
+    setPaymentMethod(t.paymentMethod ?? 'Outros')
     setIsOpen(true)
   }
+
+  useEffect(() => {
+    if (externalEdit) {
+      setEditing(externalEdit)
+      setTransactionType(externalEdit.type)
+      setDescription(externalEdit.description)
+      setAmount(externalEdit.amount.toString())
+      setDate(externalEdit.date)
+      setCategory(externalEdit.category ?? 'Outros')
+      setPaymentMethod(externalEdit.paymentMethod ?? 'Outros')
+      setIsOpen(true)
+    }
+  }, [externalEdit?.id])
 
   async function handleDelete(id: string) {
     try {
@@ -117,7 +165,7 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
                 )}
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium text-foreground">{t.description}</p>
-                  <p className="text-[10px] text-muted-foreground">{formatDate(t.date)}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatDate(t.date)} · {t.category ?? 'Outros'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -150,55 +198,133 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
         )}
       </div>
       <div className="shrink-0 space-y-2 border-t border-white/10 p-3">
+        <Button
+          className="w-full gap-2 bg-primary hover:bg-primary/90"
+          size="sm"
+          onClick={() => {
+            setTransactionType('income')
+            resetForm()
+            setIsOpen(true)
+          }}
+        >
+          <Plus className="size-4" />
+          Nova Transação
+        </Button>
         <div className="grid grid-cols-2 gap-2">
           <Button
             size="sm"
-            className="gap-2 bg-emerald-600 hover:bg-emerald-500"
+            variant="outline"
+            className="gap-2 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20"
             onClick={() => openAdd('income')}
           >
-            <Plus className="size-3.5" />
-            Recebi
+            <ArrowDownCircle className="size-3.5" />
+            Receita
           </Button>
           <Button
             size="sm"
-            variant="destructive"
-            className="gap-2"
+            variant="outline"
+            className="gap-2 border-red-500/50 text-red-400 hover:bg-red-500/20"
             onClick={() => openAdd('expense')}
           >
-            <Plus className="size-3.5" />
-            Gastei
+            <ArrowUpCircle className="size-3.5" />
+            Gasto
           </Button>
         </div>
-        <Dialog open={isOpen} onOpenChange={(o) => { setIsOpen(o); if (!o) resetForm() }}>
-          <DialogContent>
+        <Dialog open={isOpen} onOpenChange={(o) => { setIsOpen(o); if (!o) { resetForm(); onEditClose?.() } }}>
+          <DialogContent className="border-white/10 bg-black/60 backdrop-blur-xl sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editing ? 'Editar' : transactionType === 'income' ? 'Adicionar recebimento' : 'Adicionar gasto'}
+                {editing ? 'Editar transação' : transactionType === 'income' ? 'Nova receita' : 'Novo gasto'}
               </DialogTitle>
               <DialogDescription>
-                {transactionType === 'income'
-                  ? 'Registre quando receber salário ou outra renda.'
-                  : 'Registre quando fizer um gasto para subtrair do saldo.'}
+                Preencha os dados da transação.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">Descrição</label>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label>Tipo</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={transactionType === 'income' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setTransactionType('income')}
+                  >
+                    Receita
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={transactionType === 'expense' ? 'default' : 'outline'}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setTransactionType('expense')}
+                  >
+                    Gasto
+                  </Button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="desc">Descrição</Label>
                 <Input
-                  placeholder={transactionType === 'income' ? 'Ex: Salário, Freelance...' : 'Ex: Supermercado, Conta...'}
+                  id="desc"
+                  placeholder="Ex: Supermercado, Salário..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  className="bg-white/5 border-white/20"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">Valor (R$)</label>
+              <div className="grid gap-2">
+                <Label htmlFor="amount">Valor (R$)</Label>
                 <Input
+                  id="amount"
                   type="number"
                   placeholder="0,00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   min="0"
                   step="0.01"
+                  className="bg-white/5 border-white/20"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Categoria</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="bg-white/5 border-white/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Forma de pagamento</Label>
+                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <SelectTrigger className="bg-white/5 border-white/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="date">Data</Label>
+                <Input
+                  id="date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="bg-white/5 border-white/20"
                 />
               </div>
             </div>

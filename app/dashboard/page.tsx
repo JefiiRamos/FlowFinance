@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Bell, User, Menu, LogOut } from 'lucide-react'
+import { ArrowLeft, Bell, User, LogOut } from 'lucide-react'
 import { clearAuth, getToken } from '@/lib/auth'
 import { isAuthenticated } from '@/lib/auth'
 import { TransactionsForm } from '@/components/transactions-form'
@@ -12,14 +12,20 @@ import {
   financialSummaryFromTransactions,
   getAverageMonthlySurplus,
 } from '@/lib/finance'
-import { useMemo, useState } from 'react'
+import { useTransactions } from '@/hooks/use-transactions'
 import dynamic from 'next/dynamic'
 import { DashboardSummaryRow } from '@/components/dashboard-summary-row'
 import { IncomeChartCompact } from '@/components/income-chart-compact'
 import { IncomeVsSpendingChart } from '@/components/income-vs-spending-chart'
 import { CashFlowCards } from '@/components/cash-flow-cards'
-import { GoalCard } from '@/components/goal-card'
-import { useTransactions } from '@/hooks/use-transactions'
+import { AccumulatedChart } from '@/components/accumulated-chart'
+import { ExpensesPieChart } from '@/components/expenses-pie-chart'
+import { GoalsSection } from '@/components/goals-section'
+import { BudgetTable } from '@/components/budget-table'
+import { RecurringExpensesList } from '@/components/recurring-expenses-list'
+import { TransactionsTable } from '@/components/transactions-table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { Transaction } from '@/lib/finance'
 
 const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.Grainient), {
   ssr: false,
@@ -27,8 +33,8 @@ const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.G
 
 export default function DashboardPage() {
   const router = useRouter()
-
   const [authChecked, setAuthChecked] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -63,7 +69,6 @@ export default function DashboardPage() {
 
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
-      {/* Grainient background */}
       <div className="fixed inset-0 -z-10">
         <Grainient
           color1="#5227FF"
@@ -92,7 +97,6 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Header */}
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur md:px-6">
         <div className="flex items-center gap-4">
           <Link
@@ -141,46 +145,79 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main content - no scroll, fits viewport */}
-      <main className="flex min-h-0 flex-1 gap-3 overflow-hidden p-3 md:p-4">
-        {/* Left: Transações (Recebi / Gastei) */}
-        <div className="flex w-52 shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur lg:w-56">
-          <TransactionsForm
-            transactions={transactions}
-            onAdd={addTransaction}
-            onEdit={editTransaction}
-            onDelete={removeTransaction}
-            isLoading={isLoading}
-          />
-        </div>
+      <main className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 md:p-4">
+        <DashboardSummaryRow
+          totalIncome={totalIncome}
+          totalExpenses={totalExpenses}
+          balance={balance}
+        />
 
-        {/* Right: Dashboard grid */}
-        <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden">
-          {/* Summary cards row */}
-          <DashboardSummaryRow
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            balance={balance}
-          />
-
-          {/* Objetivo + Charts */}
-          <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-3">
-            <div className="min-h-0">
-              <GoalCard balance={balance} monthlySurplus={monthlySurplus} />
-            </div>
-            <div className="grid min-h-0 grid-cols-1 gap-2 lg:col-span-2 lg:grid-cols-2">
-              <div className="min-h-0 overflow-hidden rounded-xl">
-                <IncomeChartCompact summary={summary} />
-              </div>
-              <div className="min-h-0 overflow-hidden rounded-xl">
-                <IncomeVsSpendingChart summary={summary} />
-              </div>
-            </div>
+        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[260px_1fr]">
+          <div className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur lg:sticky lg:top-4 lg:h-fit">
+            <TransactionsForm
+              transactions={transactions}
+              onAdd={addTransaction}
+              onEdit={editTransaction}
+              onDelete={removeTransaction}
+              isLoading={isLoading}
+              externalEdit={editingTransaction}
+              onEditClose={() => setEditingTransaction(null)}
+            />
           </div>
 
-          {/* Fluxo de Caixa */}
-          <div className="shrink-0 rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur">
-            <CashFlowCards summary={summary} />
+          <div className="min-w-0 flex-1">
+            <Tabs defaultValue="transactions" className="w-full">
+              <TabsList className="mb-3 w-full justify-start border border-white/10 bg-black/20">
+                <TabsTrigger value="transactions">Transações</TabsTrigger>
+                <TabsTrigger value="charts">Gráficos</TabsTrigger>
+                <TabsTrigger value="goals">Metas e Orçamento</TabsTrigger>
+                <TabsTrigger value="recurring">Despesas fixas</TabsTrigger>
+              </TabsList>
+              <TabsContent value="transactions" className="mt-0">
+                <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+                  <TransactionsTable
+                    transactions={transactions}
+                    onEdit={(t) => setEditingTransaction(t)}
+                    onDelete={removeTransaction}
+                  />
+                </div>
+              </TabsContent>
+              <TabsContent value="charts" className="mt-0 space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                    <IncomeVsSpendingChart summary={summary} />
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                    <ExpensesPieChart transactions={transactions} />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                  <AccumulatedChart summary={summary} />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                  <IncomeChartCompact summary={summary} />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur">
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">Fluxo por mês</h3>
+                  <CashFlowCards summary={summary} />
+                </div>
+              </TabsContent>
+              <TabsContent value="goals" className="mt-0 space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                    <GoalsSection balance={balance} />
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur overflow-hidden">
+                    <BudgetTable transactions={transactions} />
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="recurring" className="mt-0">
+                <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+                  <RecurringExpensesList />
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>

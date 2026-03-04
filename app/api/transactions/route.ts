@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { type, amount, date, description } = parsed.data
+    const { type, amount, date, description, category, paymentMethod } = parsed.data
     const dateObj = new Date(date)
     const userId = await getSessionUserId()
 
@@ -52,6 +52,8 @@ export async function POST(request: NextRequest) {
         amount,
         date: dateObj,
         description: description ?? null,
+        category: category ?? 'Outros',
+        paymentMethod: paymentMethod ?? 'Outros',
         userId: userId ?? undefined,
       },
     })

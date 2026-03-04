@@ -14,6 +14,8 @@ export interface Transaction {
   description: string
   amount: number
   date: string // ISO date YYYY-MM-DD
+  category?: string
+  paymentMethod?: string
 }
 
 export interface MonthlyProjection {

@@ -7,14 +7,17 @@ generator client {
 }
 
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  passwordHash  String
-  name          String?
-  createdAt     DateTime  @default(now())
-  sessions      Session[]
-  transactions  Transaction[]
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String
+  name             String?
+  createdAt        DateTime  @default(now())
+  sessions         Session[]
+  transactions     Transaction[]
   recurringIncomes RecurringIncome[]
+  recurringExpenses RecurringExpense[]
+  goals            Goal[]
+  budgetLimits     BudgetLimit[]
 }
 
 model Session {
@@ -26,14 +29,16 @@ model Session {
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
-  type        String
-  amount      Float
-  date        DateTime
-  description String?
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id             String   @id @default(uuid())
+  type           String
+  amount         Float
+  date           DateTime
+  description    String?
+  category       String?  @default("Outros")
+  paymentMethod  String?  @default("Outros")
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
 }
 
 model RecurringIncome {
@@ -45,4 +50,30 @@ model RecurringIncome {
   description String  @default("Renda fixa")
   userId      String?
   user        User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RecurringExpense {
+  id          String  @id @default(uuid())
+  name        String
+  amount      Float
+  dayOfMonth  Int
+  userId      String?
+  user        User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Goal {
+  id          String   @id @default(uuid())
+  name        String
+  targetAmount Float
+  currentAmount Float  @default(0)
+  userId      String?
+  user        User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BudgetLimit {
+  id         String   @id @default(uuid())
+  category   String
+  limit      Float
+  userId     String?
+  user       User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

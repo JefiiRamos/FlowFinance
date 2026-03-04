@@ -8,6 +8,8 @@ export interface ApiTransaction {
   amount: number
   date: string
   description: string | null
+  category: string | null
+  paymentMethod: string | null
   createdAt: string
 }
 
@@ -16,6 +18,8 @@ export interface CreateTransactionInput {
   amount: number
   date: string
   description?: string
+  category?: string
+  paymentMethod?: string
 }
 
 const BASE = '/api'
