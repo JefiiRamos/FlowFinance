@@ -129,7 +129,7 @@ export function RecurringExpensesList() {
         ) : (
           <div className="space-y-2 max-h-[200px] overflow-y-auto">
             {items.map((item) => {
-              const isOverdue = item.dayOfMonth < currentDay
+              const isOverdue = item.dueDay < currentDay
               const status = isOverdue ? 'Pendente' : 'A vencer'
               return (
                 <div
