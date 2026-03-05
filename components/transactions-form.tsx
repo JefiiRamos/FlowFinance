@@ -77,8 +77,19 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
   }, [])
 
   async function handleSave() {
+    if (!description.trim()) {
+      toast.error('Preencha a descrição')
+      return
+    }
     const parsedAmount = parseFloat(amount)
-    if (!description.trim() || isNaN(parsedAmount) || parsedAmount <= 0) return
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast.error('Informe um valor válido')
+      return
+    }
+    if (!date?.trim()) {
+      toast.error('Informe a data')
+      return
+    }
 
     setIsSaving(true)
     try {

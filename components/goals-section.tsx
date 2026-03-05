@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { formatCurrency } from '@/lib/finance'
-import { Target, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Target, Plus, Trash2 } from 'lucide-react'
 
 const STORAGE_KEY = 'flowfinance-goals'
 
@@ -47,8 +47,6 @@ export function GoalsSection({ balance }: GoalsSectionProps) {
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
   const [newTarget, setNewTarget] = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editCurrent, setEditCurrent] = useState('')
 
   useEffect(() => {
     setGoals(loadGoals())
@@ -71,15 +69,8 @@ export function GoalsSection({ balance }: GoalsSectionProps) {
     setAdding(false)
   }
 
-  function updateCurrent(id: string, value: number) {
-    setGoals((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, currentAmount: Math.max(0, value) } : g))
-    )
-  }
-
   function removeGoal(id: string) {
     setGoals((prev) => prev.filter((g) => g.id !== id))
-    setEditingId(null)
   }
 
   return (
@@ -126,46 +117,20 @@ export function GoalsSection({ balance }: GoalsSectionProps) {
           <p className="text-xs text-muted-foreground">Nenhuma meta. Clique em Meta para criar.</p>
         )}
         {goals.map((g) => {
-          const progress = g.targetAmount > 0 ? Math.min(100, (g.currentAmount / g.targetAmount) * 100) : 0
-          const isEditing = editingId === g.id
+          // Progresso usa o saldo total (o que você recebeu/já tem), não valor manual
+          const currentFromBalance = Math.min(balance, g.targetAmount)
+          const progress = g.targetAmount > 0 ? Math.min(100, (currentFromBalance / g.targetAmount) * 100) : 0
           return (
             <div key={g.id} className="rounded-lg border border-white/10 bg-black/20 p-3 transition-colors hover:bg-black/30">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-foreground text-sm">{g.name}</span>
-                <div className="flex items-center gap-1">
-                  {isEditing ? (
-                    <>
-                      <Input
-                        type="number"
-                        value={editCurrent}
-                        onChange={(e) => setEditCurrent(e.target.value)}
-                        className="h-6 w-20 text-xs"
-                        min="0"
-                        step="100"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            updateCurrent(g.id, parseFloat(editCurrent.replace(',', '.')) || 0)
-                            setEditingId(null)
-                          }
-                        }}
-                      />
-                      <Button size="icon" className="h-6 w-6" onClick={() => { updateCurrent(g.id, parseFloat(editCurrent.replace(',', '.')) || 0); setEditingId(null) }}>
-                        <Pencil className="size-3" />
-                      </Button>
-                    </>
-                  ) : (
-                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => { setEditingId(g.id); setEditCurrent(String(g.currentAmount)) }}>
-                      <Pencil className="size-3" />
-                    </Button>
-                  )}
-                  <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeGoal(g.id)}>
-                    <Trash2 className="size-3" />
-                  </Button>
-                </div>
+                <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeGoal(g.id)}>
+                  <Trash2 className="size-3" />
+                </Button>
               </div>
               <div className="mt-2 flex items-baseline justify-between text-xs">
                 <span className="text-muted-foreground">
-                  {formatCurrency(g.currentAmount)} / {formatCurrency(g.targetAmount)}
+                  {formatCurrency(currentFromBalance)} / {formatCurrency(g.targetAmount)}
                 </span>
                 <span className={progress >= 100 ? 'text-emerald-400' : 'text-muted-foreground'}>
                   {progress >= 100 ? 'Concluído' : `${progress.toFixed(0)}%`}
