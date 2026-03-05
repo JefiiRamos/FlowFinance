@@ -22,6 +22,7 @@ import { CashFlowCards } from '@/components/cash-flow-cards'
 import { AccumulatedChart } from '@/components/accumulated-chart'
 import { ExpensesPieChart } from '@/components/expenses-pie-chart'
 import { GoalsSection } from '@/components/goals-section'
+import { ScenarioSimulator } from '@/components/scenario-simulator'
 import { BudgetTable } from '@/components/budget-table'
 import { RecurringExpensesList } from '@/components/recurring-expenses-list'
 import { TransactionsTable } from '@/components/transactions-table'
@@ -268,6 +269,10 @@ export default function DashboardPage() {
               <CashFlowCards summary={summary} />
             </div>
           </div>
+        )}
+
+        {section === 'simulador' && (
+          <ScenarioSimulator transactions={transactions} />
         )}
 
         {section === 'metas' && (

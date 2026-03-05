@@ -13,6 +13,7 @@ import {
   User,
   Receipt,
   BarChart3,
+  FlaskConical,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +22,7 @@ export type NavSection =
   | 'transacoes'
   | 'graficos'
   | 'metas'
+  | 'simulador'
   | 'despesas-fixas'
   | 'contas'
   | 'relatorios'
@@ -30,6 +32,7 @@ const SIDEBAR_ITEMS: { id: NavSection; label: string; icon: typeof LayoutDashboa
   { id: 'transacoes', label: 'Transacoes', icon: Receipt },
   { id: 'graficos', label: 'Graficos', icon: BarChart3 },
   { id: 'metas', label: 'Metas', icon: Target },
+  { id: 'simulador', label: 'Simulador', icon: FlaskConical },
   { id: 'despesas-fixas', label: 'Despesas fixas', icon: Repeat },
   { id: 'contas', label: 'Contas', icon: Wallet },
   { id: 'relatorios', label: 'Relatorios', icon: FileBarChart },
