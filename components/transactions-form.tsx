@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -46,9 +46,11 @@ interface TransactionsFormProps {
   isLoading?: boolean
   externalEdit?: Transaction | null
   onEditClose?: () => void
+  /** Ref to open add dialog from outside (e.g. FAB) */
+  openAddRef?: React.MutableRefObject<{ open: (type?: TransactionType) => void } | null>
 }
 
-export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoading, externalEdit, onEditClose }: TransactionsFormProps) {
+export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoading, externalEdit, onEditClose, openAddRef }: TransactionsFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [transactionType, setTransactionType] = useState<TransactionType>('income')
@@ -68,11 +70,11 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
     setEditing(null)
   }
 
-  function openAdd(type: TransactionType) {
+  const openAdd = useCallback((type: TransactionType) => {
     setTransactionType(type)
     resetForm()
     setIsOpen(true)
-  }
+  }, [])
 
   async function handleSave() {
     const parsedAmount = parseFloat(amount)
@@ -113,6 +115,15 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
     setPaymentMethod(t.paymentMethod ?? 'Outros')
     setIsOpen(true)
   }
+
+  useEffect(() => {
+    if (openAddRef) {
+      openAddRef.current = { open: (type = 'income') => openAdd(type) }
+      return () => {
+        openAddRef.current = null
+      }
+    }
+  }, [openAddRef, openAdd])
 
   useEffect(() => {
     if (externalEdit) {

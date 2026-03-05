@@ -3,13 +3,6 @@
 import { useMemo, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Table,
   TableBody,
   TableCell,
@@ -20,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { type Transaction, formatCurrency } from '@/lib/finance'
 import { getCategoryIcon, getPaymentIcon } from '@/lib/constants'
-import { MONTH_NAMES } from '@/lib/finance'
 import { Pencil, Trash2, Search } from 'lucide-react'
 
 function formatDate(iso: string) {
@@ -36,7 +28,6 @@ interface TransactionsTableProps {
 
 export function TransactionsTable({ transactions, onEdit, onDelete }: TransactionsTableProps) {
   const [search, setSearch] = useState('')
-  const [monthFilter, setMonthFilter] = useState<string>('all')
 
   const filtered = useMemo(() => {
     let list = [...transactions]
@@ -49,28 +40,8 @@ export function TransactionsTable({ transactions, onEdit, onDelete }: Transactio
           (t.paymentMethod ?? '').toLowerCase().includes(q)
       )
     }
-    if (monthFilter !== 'all') {
-      const [y, m] = monthFilter.split('-').map(Number)
-      list = list.filter((t) => {
-        const d = new Date(t.date)
-        return d.getFullYear() === y && d.getMonth() + 1 === m
-      })
-    }
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [transactions, search, monthFilter])
-
-  const months = useMemo(() => {
-    const now = new Date()
-    const currentYear = now.getFullYear()
-    const options: { value: string; label: string }[] = [{ value: 'all', label: 'Todos os meses' }]
-    for (let m = 0; m < 12; m++) {
-      options.push({
-        value: `${currentYear}-${m + 1}`,
-        label: `${MONTH_NAMES[m]} ${currentYear}`,
-      })
-    }
-    return options
-  }, [])
+  }, [transactions, search])
 
   return (
     <div className="flex flex-col gap-3">
@@ -78,24 +49,12 @@ export function TransactionsTable({ transactions, onEdit, onDelete }: Transactio
         <div className="relative flex-1 min-w-[160px]">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Buscar por descrição, categoria..."
+            placeholder="Buscar por descricao, categoria..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-8 bg-white/5 border-white/20"
           />
         </div>
-        <Select value={monthFilter} onValueChange={setMonthFilter}>
-          <SelectTrigger className="w-[180px] bg-white/5 border-white/20">
-            <SelectValue placeholder="Mês" />
-          </SelectTrigger>
-          <SelectContent>
-            {months.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
       <div className="rounded-xl border border-white/10 bg-black/20 backdrop-blur overflow-hidden">
         <div className="overflow-x-auto max-h-[320px] overflow-y-auto">

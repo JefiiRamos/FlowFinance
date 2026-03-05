@@ -44,8 +44,8 @@ export function AccumulatedChart({ summary }: AccumulatedChartProps) {
   return (
     <Card className="border-border/50 bg-card">
       <CardHeader>
-        <CardTitle className="text-base">Reserva Acumulada</CardTitle>
-        <CardDescription>Evolucao do saldo acumulado ao longo do ano</CardDescription>
+        <CardTitle className="text-base">Evolucao financeira</CardTitle>
+        <CardDescription>Saldo acumulado por mes ao longo do ano</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[250px] w-full">

@@ -1,20 +1,20 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Bell, User, LogOut } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { clearAuth, getToken } from '@/lib/auth'
 import { isAuthenticated } from '@/lib/auth'
 import { TransactionsForm } from '@/components/transactions-form'
 import {
   calculateSummaryFromTransactions,
   financialSummaryFromTransactions,
-  getAverageMonthlySurplus,
+  getTotalIncome,
+  getTotalExpenses,
 } from '@/lib/finance'
 import { useTransactions } from '@/hooks/use-transactions'
 import dynamic from 'next/dynamic'
-import { DashboardSummaryRow } from '@/components/dashboard-summary-row'
 import { IncomeChartCompact } from '@/components/income-chart-compact'
 import { IncomeVsSpendingChart } from '@/components/income-vs-spending-chart'
 import { CashFlowCards } from '@/components/cash-flow-cards'
@@ -24,17 +24,71 @@ import { GoalsSection } from '@/components/goals-section'
 import { BudgetTable } from '@/components/budget-table'
 import { RecurringExpensesList } from '@/components/recurring-expenses-list'
 import { TransactionsTable } from '@/components/transactions-table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { AppShell, type NavSection } from '@/components/dashboard/app-shell'
+import { SummaryCards } from '@/components/dashboard/summary-cards'
+import { PeriodFilter, type PeriodValue } from '@/components/dashboard/period-filter'
 import type { Transaction } from '@/lib/finance'
+import { addDays, endOfDay, endOfMonth, startOfDay, startOfMonth, subMonths } from 'date-fns'
 
 const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.Grainient), {
   ssr: false,
 })
 
+function getDateRangeForPeriod(
+  value: PeriodValue,
+  customRange?: { from: Date; to: Date }
+): { from: Date; to: Date } {
+  const now = new Date()
+  switch (value) {
+    case 'today':
+      return { from: startOfDay(now), to: endOfDay(now) }
+    case '7d':
+      return { from: startOfDay(addDays(now, -6)), to: endOfDay(now) }
+    case 'month':
+      return { from: startOfMonth(now), to: endOfDay(now) }
+    case 'lastMonth': {
+      const last = subMonths(now, 1)
+      return { from: startOfMonth(last), to: endOfMonth(last) }
+    }
+    case 'custom':
+      return customRange ?? { from: startOfMonth(now), to: endOfDay(now) }
+    default:
+      return { from: startOfMonth(now), to: endOfDay(now) }
+  }
+}
+
+function filterTransactionsByPeriod(
+  transactions: Transaction[],
+  value: PeriodValue,
+  customRange?: { from: Date; to: Date }
+): Transaction[] {
+  const { from, to } = getDateRangeForPeriod(value, customRange)
+  const fromTime = from.getTime()
+  const toTime = to.getTime()
+  return transactions.filter((t) => {
+    const tTime = new Date(t.date).getTime()
+    return tTime >= fromTime && tTime <= toTime
+  })
+}
+
+function getCurrentMonthTransactions(transactions: Transaction[]): Transaction[] {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth()
+  return transactions.filter((t) => {
+    const d = new Date(t.date)
+    return d.getFullYear() === year && d.getMonth() === month
+  })
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+  const [section, setSection] = useState<NavSection>('inicio')
+  const [period, setPeriod] = useState<PeriodValue>('month')
+  const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | undefined>()
+  const openAddRef = useRef<{ open: (type?: import('@/lib/finance').TransactionType) => void } | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -44,18 +98,39 @@ export default function DashboardPage() {
     }
   }, [router])
 
+  const handleLogout = useCallback(async () => {
+    const token = getToken()
+    if (token) {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {})
+    }
+    clearAuth()
+    router.push('/login')
+    router.refresh()
+  }, [router])
+
   const { transactions, isLoading, addTransaction, editTransaction, removeTransaction } = useTransactions()
 
-  const { totalIncome, totalExpenses, balance } = useMemo(
+  const currentMonthTx = useMemo(() => getCurrentMonthTransactions(transactions), [transactions])
+  const monthlyIncome = useMemo(() => getTotalIncome(currentMonthTx), [currentMonthTx])
+  const monthlyExpenses = useMemo(() => getTotalExpenses(currentMonthTx), [currentMonthTx])
+  const monthlySavings = monthlyIncome - monthlyExpenses
+  const savingsPercent = monthlyIncome > 0 ? (monthlySavings / monthlyIncome) * 100 : 0
+
+  const { balance } = useMemo(
     () => calculateSummaryFromTransactions(transactions),
     [transactions]
   )
+
+  const filteredTransactions = useMemo(
+    () => filterTransactionsByPeriod(transactions, period, customRange),
+    [transactions, period, customRange]
+  )
+
   const summary = useMemo(
     () => financialSummaryFromTransactions(transactions),
-    [transactions]
-  )
-  const monthlySurplus = useMemo(
-    () => getAverageMonthlySurplus(transactions),
     [transactions]
   )
 
@@ -68,7 +143,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
+    <AppShell section={section} onSectionChange={setSection} onLogout={handleLogout}>
       <div className="fixed inset-0 -z-10">
         <Grainient
           color1="#5227FF"
@@ -97,130 +172,123 @@ export default function DashboardPage() {
         />
       </div>
 
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-black/20 px-4 py-3 backdrop-blur md:px-6">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="size-4" />
-            <span className="hidden sm:inline">Voltar</span>
-          </Link>
-          <span className="text-lg font-semibold text-foreground">FlowFinance</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
-            aria-label="Notificações"
-          >
-            <Bell className="size-4" />
-          </button>
-          <button
-            type="button"
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
-            aria-label="Perfil"
-          >
-            <User className="size-4" />
-          </button>
-          <button
-            type="button"
-            aria-label="Sair"
-            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
-            onClick={async () => {
-              const token = getToken()
-              if (token) {
-                await fetch('/api/auth/logout', {
-                  method: 'POST',
-                  headers: { Authorization: `Bearer ${token}` },
-                }).catch(() => {})
-              }
-              clearAuth()
-              router.push('/login')
-              router.refresh()
-            }}
-          >
-            <LogOut className="size-4" />
-          </button>
-        </div>
-      </header>
-
-      <main className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 md:p-4">
-        <DashboardSummaryRow
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-          balance={balance}
-        />
-
-        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[260px_1fr]">
-          <div className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur lg:sticky lg:top-4 lg:h-fit">
-            <TransactionsForm
-              transactions={transactions}
-              onAdd={addTransaction}
-              onEdit={editTransaction}
-              onDelete={removeTransaction}
-              isLoading={isLoading}
-              externalEdit={editingTransaction}
-              onEditClose={() => setEditingTransaction(null)}
+      <div className="flex flex-col gap-3 p-3 md:p-4">
+        {section === 'inicio' && (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-xs text-muted-foreground sm:mr-auto">Filtrar transacoes</span>
+            <PeriodFilter
+              value={period}
+              onChange={setPeriod}
+              customRange={customRange}
+              onCustomRangeChange={setCustomRange}
             />
           </div>
+        )}
 
-          <div className="min-w-0 flex-1">
-            <Tabs defaultValue="transactions" className="w-full">
-              <TabsList className="mb-3 w-full justify-start border border-white/10 bg-black/20">
-                <TabsTrigger value="transactions">Transações</TabsTrigger>
-                <TabsTrigger value="charts">Gráficos</TabsTrigger>
-                <TabsTrigger value="goals">Metas e Orçamento</TabsTrigger>
-                <TabsTrigger value="recurring">Despesas fixas</TabsTrigger>
-              </TabsList>
-              <TabsContent value="transactions" className="mt-0">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
-                  <TransactionsTable
-                    transactions={transactions}
-                    onEdit={(t) => setEditingTransaction(t)}
-                    onDelete={removeTransaction}
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="charts" className="mt-0 space-y-3">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
-                    <IncomeVsSpendingChart summary={summary} />
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
-                    <ExpensesPieChart transactions={transactions} />
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
-                  <AccumulatedChart summary={summary} />
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
-                  <IncomeChartCompact summary={summary} />
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur">
-                  <h3 className="mb-2 text-sm font-semibold text-foreground">Fluxo por mês</h3>
-                  <CashFlowCards summary={summary} />
-                </div>
-              </TabsContent>
-              <TabsContent value="goals" className="mt-0 space-y-3">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
-                    <GoalsSection balance={balance} />
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur overflow-hidden">
-                    <BudgetTable transactions={transactions} />
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="recurring" className="mt-0">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
-                  <RecurringExpensesList />
-                </div>
-              </TabsContent>
-            </Tabs>
+        <SummaryCards
+          balance={balance}
+          monthlyIncome={monthlyIncome}
+          monthlyExpenses={monthlyExpenses}
+          monthlySavings={monthlySavings}
+          savingsPercent={savingsPercent}
+        />
+
+        {section === 'inicio' && (
+          <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[260px_1fr]">
+            <div className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur lg:sticky lg:top-4 lg:h-fit">
+              <TransactionsForm
+                transactions={transactions}
+                onAdd={addTransaction}
+                onEdit={editTransaction}
+                onDelete={removeTransaction}
+                isLoading={isLoading}
+                externalEdit={editingTransaction}
+                onEditClose={() => setEditingTransaction(null)}
+                openAddRef={openAddRef}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+                <TransactionsTable
+                  transactions={filteredTransactions}
+                  onEdit={(t) => setEditingTransaction(t)}
+                  onDelete={removeTransaction}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        )}
+
+        {section === 'metas' && (
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+              <GoalsSection balance={balance} />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/20 overflow-hidden p-3 backdrop-blur">
+              <BudgetTable transactions={transactions} />
+            </div>
+          </div>
+        )}
+
+        {section === 'despesas-fixas' && (
+          <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+            <RecurringExpensesList />
+          </div>
+        )}
+
+        {section === 'contas' && (
+          <div className="rounded-xl border border-white/10 bg-black/20 p-6 backdrop-blur">
+            <p className="text-center text-muted-foreground">Contas e carteiras em breve.</p>
+          </div>
+        )}
+
+        {section === 'relatorios' && (
+          <div className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                <ExpensesPieChart transactions={transactions} />
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                <AccumulatedChart summary={summary} />
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                <IncomeVsSpendingChart summary={summary} />
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+                <IncomeChartCompact summary={summary} />
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Fluxo por mes</h3>
+              <CashFlowCards summary={summary} />
+            </div>
+          </div>
+        )}
+
+        {section === 'notificacoes' && (
+          <div className="space-y-3">
+            <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+              <h3 className="mb-3 text-sm font-semibold text-foreground">Contas a pagar</h3>
+              <RecurringExpensesList />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/20 p-6 backdrop-blur">
+              <p className="text-center text-sm text-muted-foreground">Outras notificacoes aparecerao aqui.</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* FAB - botao grande Nova Transacao */}
+      <button
+        type="button"
+        onClick={() => openAddRef.current?.open()}
+        className="fixed bottom-24 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-all hover:scale-110 hover:shadow-2xl active:scale-95 lg:bottom-6 lg:h-16 lg:w-16"
+        aria-label="Nova Transacao"
+      >
+        <Plus className="size-8" />
+      </button>
+    </AppShell>
   )
 }
