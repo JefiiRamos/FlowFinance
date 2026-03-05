@@ -18,6 +18,8 @@ model User {
   recurringExpenses RecurringExpense[]
   goals            Goal[]
   budgetLimits     BudgetLimit[]
+  accounts         Account[]
+  notifications    Notification[]
 }
 
 model Session {
@@ -28,17 +30,48 @@ model Session {
   expiresAt DateTime
 }
 
+model Category {
+  id              String   @id @default(uuid())
+  name            String
+  type            String   // income | expense
+  icon            String?
+  transactions    Transaction[]
+  recurringExpenses RecurringExpense[]
+}
+
+model PaymentMethod {
+  id           String   @id @default(uuid())
+  name         String
+  transactions Transaction[]
+}
+
+model Account {
+  id           String   @id @default(uuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  type         String   // bank | cash | credit_card | investment
+  balance      Float    @default(0)
+  transactions Transaction[]
+}
+
 model Transaction {
-  id             String   @id @default(uuid())
-  type           String
-  amount         Float
-  date           DateTime
-  description    String?
-  category       String?  @default("Outros")
-  paymentMethod  String?  @default("Outros")
-  userId         String?
-  user           User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
+  id              String   @id @default(uuid())
+  type            String   // income | expense
+  amount          Float
+  date            DateTime
+  description     String?
+  category        String?  @default("Outros")  // fallback legado
+  paymentMethod   String?  @default("Outros")  // fallback legado
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId      String?
+  categoryRel     Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  paymentMethodId String?
+  paymentMethodRel PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  accountId       String?
+  account         Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
 }
 
 model RecurringIncome {
@@ -53,21 +86,26 @@ model RecurringIncome {
 }
 
 model RecurringExpense {
-  id          String  @id @default(uuid())
-  name        String
+  id          String    @id @default(uuid())
+  name        String    // alias para descricao
+  description String?   // descricao detalhada
   amount      Float
-  dayOfMonth  Int
+  dueDay      Int       @default(1) // dia do mes (1-31), equivale a dayOfMonth
   userId      String?
-  user        User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
 }
 
 model Goal {
-  id          String   @id @default(uuid())
-  name        String
-  targetAmount Float
-  currentAmount Float  @default(0)
-  userId      String?
-  user        User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid())
+  name           String
+  targetAmount   Float
+  currentAmount  Float     @default(0)
+  deadline       DateTime?
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model BudgetLimit {
@@ -76,4 +114,14 @@ model BudgetLimit {
   limit      Float
   userId     String?
   user       User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

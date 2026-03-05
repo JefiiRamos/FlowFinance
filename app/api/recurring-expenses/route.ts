@@ -9,7 +9,7 @@ export async function GET() {
     const userId = await getSessionUserId()
     const items = await prisma.recurringExpense.findMany({
       where: userId ? { OR: [{ userId }, { userId: null }] } : {},
-      orderBy: { dayOfMonth: 'asc' },
+      orderBy: { dueDay: 'asc' },
     })
     return NextResponse.json(items)
   } catch (error) {
@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { name, amount, dayOfMonth } = body
-    if (!name || typeof amount !== 'number' || amount <= 0 || typeof dayOfMonth !== 'number' || dayOfMonth < 1 || dayOfMonth > 31) {
+    const day = dayOfMonth ?? body.dueDay
+    if (!name || typeof amount !== 'number' || amount <= 0 || typeof day !== 'number' || day < 1 || day > 31) {
       return NextResponse.json({ error: 'Dados invalidos' }, { status: 400 })
     }
     const userId = await getSessionUserId()
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: String(name),
         amount,
-        dayOfMonth: Math.min(31, Math.max(1, dayOfMonth)),
+        dueDay: Math.min(31, Math.max(1, day)),
         userId: userId ?? undefined,
       },
     })

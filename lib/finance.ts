@@ -219,7 +219,11 @@ export function getAverageMonthlyExpenses(transactions: Transaction[]): number {
   return values.reduce((a, b) => a + b, 0) / values.length
 }
 
-/** Projecao de saldo no final do mes (saldo atual + receitas restantes estimadas - gastos projetados) */
+/**
+ * Projecao de saldo no final do mes.
+ * Conservadora: nao assume receitas futuras (salario costuma vir 1x), apenas projeta gastos.
+ * Formula: Saldo atual - (gastos projetados no resto do mes)
+ */
 export function getProjectedEndOfMonthBalance(
   transactions: Transaction[],
   currentBalance: number
@@ -227,19 +231,16 @@ export function getProjectedEndOfMonthBalance(
   const now = new Date()
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
   const dayOfMonth = now.getDate()
-  const daysLeft = daysInMonth - dayOfMonth
+  const daysLeft = Math.max(0, daysInMonth - dayOfMonth)
 
   const currentMonthTx = transactions.filter((t) => {
     const d = new Date(t.date)
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
   })
-  const monthlyIncome = getTotalIncome(currentMonthTx)
   const monthlyExpenses = getTotalExpenses(currentMonthTx)
   const dailyExpenseRate = dayOfMonth > 0 ? monthlyExpenses / dayOfMonth : 0
-  const projectedExpenses = monthlyExpenses + dailyExpenseRate * daysLeft
-  const avgDailyIncome = dayOfMonth > 0 && monthlyIncome > 0 ? monthlyIncome / dayOfMonth : 0
-  const projectedIncome = monthlyIncome + avgDailyIncome * daysLeft
-  return currentBalance + (projectedIncome - monthlyIncome) - (projectedExpenses - monthlyExpenses)
+  const projectedExpensesRest = dailyExpenseRate * daysLeft
+  return currentBalance - projectedExpensesRest
 }
 
 /** Create FinancialSummary from transactions for chart compatibility */

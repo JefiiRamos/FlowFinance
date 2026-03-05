@@ -13,7 +13,7 @@ interface RecurringExpense {
   id: string
   name: string
   amount: number
-  dayOfMonth: number
+  dueDay: number
 }
 
 export function RecurringExpensesList() {
@@ -139,7 +139,7 @@ export function RecurringExpensesList() {
                   <div>
                     <p className="text-sm font-medium text-foreground">{item.name}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      Vencimento: dia {item.dayOfMonth} · {status}
+                      Vencimento: dia {item.dueDay} · {status}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-red-400">{formatCurrency(item.amount)}</span>
