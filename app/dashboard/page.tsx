@@ -25,6 +25,7 @@ import { GoalsSection } from '@/components/goals-section'
 import { ScenarioSimulator } from '@/components/scenario-simulator'
 import { BudgetTable } from '@/components/budget-table'
 import { RecurringExpensesList } from '@/components/recurring-expenses-list'
+import { RecurringIncomeList } from '@/components/recurring-income-list'
 import { TransactionsTable } from '@/components/transactions-table'
 import { AppShell, type NavSection } from '@/components/dashboard/app-shell'
 import { SummaryCards } from '@/components/dashboard/summary-cards'
@@ -297,8 +298,13 @@ export default function DashboardPage() {
         )}
 
         {section === 'despesas-fixas' && (
-          <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
-            <RecurringExpensesList />
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+              <RecurringIncomeList />
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+              <RecurringExpensesList />
+            </div>
           </div>
         )}
 
