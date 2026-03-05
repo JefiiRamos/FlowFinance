@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [authChecked, setAuthChecked] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [section, setSection] = useState<NavSection>('inicio')
+  const [pendingOpenAdd, setPendingOpenAdd] = useState(false)
   const [period, setPeriod] = useState<PeriodValue>('month')
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | undefined>()
   const openAddRef = useRef<{ open: (type?: import('@/lib/finance').TransactionType) => void } | null>(null)
@@ -142,6 +143,15 @@ export default function DashboardPage() {
     () => financialSummaryFromTransactions(transactions),
     [transactions]
   )
+
+  // Quando o usuário clica no FAB em outra aba, trocamos para "transacoes"
+  // e abrimos o modal assim que o formulário estiver montado.
+  useEffect(() => {
+    if (section === 'transacoes' && pendingOpenAdd && openAddRef.current) {
+      openAddRef.current.open()
+      setPendingOpenAdd(false)
+    }
+  }, [section, pendingOpenAdd])
 
   if (!authChecked) {
     return (
@@ -331,7 +341,14 @@ export default function DashboardPage() {
       {/* FAB - botao grande Nova Transacao */}
       <button
         type="button"
-        onClick={() => openAddRef.current?.open()}
+        onClick={() => {
+          if (section !== 'transacoes') {
+            setPendingOpenAdd(true)
+            setSection('transacoes')
+          } else {
+            openAddRef.current?.open()
+          }
+        }}
         className="fixed bottom-24 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-all hover:scale-110 hover:shadow-2xl active:scale-95 lg:bottom-6 lg:h-16 lg:w-16"
         aria-label="Nova Transacao"
       >
