@@ -7,29 +7,32 @@ import {
   Repeat,
   Wallet,
   FileBarChart,
-  Bell,
   Menu,
   ChevronLeft,
   LogOut,
   User,
+  Receipt,
+  BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type NavSection =
   | 'inicio'
+  | 'transacoes'
+  | 'graficos'
   | 'metas'
   | 'despesas-fixas'
   | 'contas'
   | 'relatorios'
-  | 'notificacoes'
 
 const SIDEBAR_ITEMS: { id: NavSection; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
+  { id: 'inicio', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'transacoes', label: 'Transacoes', icon: Receipt },
+  { id: 'graficos', label: 'Graficos', icon: BarChart3 },
   { id: 'metas', label: 'Metas', icon: Target },
   { id: 'despesas-fixas', label: 'Despesas fixas', icon: Repeat },
-  { id: 'contas', label: 'Contas e carteiras', icon: Wallet },
+  { id: 'contas', label: 'Contas', icon: Wallet },
   { id: 'relatorios', label: 'Relatorios', icon: FileBarChart },
-  { id: 'notificacoes', label: 'Notificacoes', icon: Bell },
 ]
 
 interface AppShellProps {
@@ -53,7 +56,7 @@ export function AppShell({ section, onSectionChange, children, onLogout }: AppSh
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-3">
           {sidebarOpen && (
-            <span className="text-sm font-semibold text-foreground">FlowFinance</span>
+            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-sm font-bold text-transparent">FlowFinance 3.0</span>
           )}
           <button
             type="button"

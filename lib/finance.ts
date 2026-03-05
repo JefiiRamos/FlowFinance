@@ -191,6 +191,57 @@ export function transactionsToMonthlyProjections(
   })
 }
 
+/** Categoria que mais gasta (a partir de transacoes expense) */
+export function getTopSpendingCategory(transactions: Transaction[]): { category: string; amount: number } | null {
+  const byCat: Record<string, number> = {}
+  for (const t of transactions) {
+    if (t.type !== 'expense') continue
+    const cat = t.category ?? 'Outros'
+    byCat[cat] = (byCat[cat] ?? 0) + t.amount
+  }
+  const entries = Object.entries(byCat)
+  if (entries.length === 0) return null
+  const top = entries.reduce((a, b) => (a[1] >= b[1] ? a : b))
+  return { category: top[0], amount: top[1] }
+}
+
+/** Media de gastos mensal (ultimos 12 meses) */
+export function getAverageMonthlyExpenses(transactions: Transaction[]): number {
+  const byMonth: Record<string, number> = {}
+  for (const t of transactions) {
+    if (t.type !== 'expense') continue
+    const d = new Date(t.date)
+    const key = `${d.getFullYear()}-${d.getMonth()}`
+    byMonth[key] = (byMonth[key] ?? 0) + t.amount
+  }
+  const values = Object.values(byMonth)
+  if (values.length === 0) return 0
+  return values.reduce((a, b) => a + b, 0) / values.length
+}
+
+/** Projecao de saldo no final do mes (saldo atual + receitas restantes estimadas - gastos projetados) */
+export function getProjectedEndOfMonthBalance(
+  transactions: Transaction[],
+  currentBalance: number
+): number {
+  const now = new Date()
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const dayOfMonth = now.getDate()
+  const daysLeft = daysInMonth - dayOfMonth
+
+  const currentMonthTx = transactions.filter((t) => {
+    const d = new Date(t.date)
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+  })
+  const monthlyIncome = getTotalIncome(currentMonthTx)
+  const monthlyExpenses = getTotalExpenses(currentMonthTx)
+  const dailyExpenseRate = dayOfMonth > 0 ? monthlyExpenses / dayOfMonth : 0
+  const projectedExpenses = monthlyExpenses + dailyExpenseRate * daysLeft
+  const avgDailyIncome = dayOfMonth > 0 && monthlyIncome > 0 ? monthlyIncome / dayOfMonth : 0
+  const projectedIncome = monthlyIncome + avgDailyIncome * daysLeft
+  return currentBalance + (projectedIncome - monthlyIncome) - (projectedExpenses - monthlyExpenses)
+}
+
 /** Create FinancialSummary from transactions for chart compatibility */
 export function financialSummaryFromTransactions(
   transactions: Transaction[]

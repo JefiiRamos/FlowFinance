@@ -12,6 +12,7 @@ import {
   financialSummaryFromTransactions,
   getTotalIncome,
   getTotalExpenses,
+  getProjectedEndOfMonthBalance,
 } from '@/lib/finance'
 import { useTransactions } from '@/hooks/use-transactions'
 import dynamic from 'next/dynamic'
@@ -27,6 +28,8 @@ import { TransactionsTable } from '@/components/transactions-table'
 import { AppShell, type NavSection } from '@/components/dashboard/app-shell'
 import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { PeriodFilter, type PeriodValue } from '@/components/dashboard/period-filter'
+import { FinancialIntelligence } from '@/components/dashboard/financial-intelligence'
+import { ExportReportsButton } from '@/components/dashboard/export-reports-button'
 import type { Transaction } from '@/lib/finance'
 import { addDays, endOfDay, endOfMonth, startOfDay, startOfMonth, subMonths } from 'date-fns'
 
@@ -124,6 +127,11 @@ export default function DashboardPage() {
     [transactions]
   )
 
+  const projectedBalance = useMemo(
+    () => getProjectedEndOfMonthBalance(transactions, balance),
+    [transactions, balance]
+  )
+
   const filteredTransactions = useMemo(
     () => filterTransactionsByPeriod(transactions, period, customRange),
     [transactions, period, customRange]
@@ -146,9 +154,9 @@ export default function DashboardPage() {
     <AppShell section={section} onSectionChange={setSection} onLogout={handleLogout}>
       <div className="fixed inset-0 -z-10">
         <Grainient
-          color1="#5227FF"
-          color2="#0a0615"
-          color3="#0d0a18"
+          color1="#7c3aed"
+          color2="#0c0a14"
+          color3="#1e1b2e"
           timeSpeed={0.25}
           colorBalance={0}
           warpStrength={1}
@@ -173,29 +181,47 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex flex-col gap-3 p-3 md:p-4">
-        {section === 'inicio' && (
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="text-xs text-muted-foreground sm:mr-auto">Filtrar transacoes</span>
-            <PeriodFilter
-              value={period}
-              onChange={setPeriod}
-              customRange={customRange}
-              onCustomRangeChange={setCustomRange}
-            />
-          </div>
-        )}
-
         <SummaryCards
           balance={balance}
           monthlyIncome={monthlyIncome}
           monthlyExpenses={monthlyExpenses}
           monthlySavings={monthlySavings}
           savingsPercent={savingsPercent}
+          projectedBalance={projectedBalance}
         />
 
         {section === 'inicio' && (
+          <>
+          <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl">
+            <FinancialIntelligence
+              transactions={transactions}
+              monthlyExpenses={monthlyExpenses}
+              monthlyIncome={monthlyIncome}
+            />
+          </div>
+          <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Ultimas transacoes</h3>
+              <button
+                type="button"
+                onClick={() => setSection('transacoes')}
+                className="text-xs font-medium text-violet-400 hover:text-violet-300"
+              >
+                Ver todas
+              </button>
+            </div>
+            <TransactionsTable
+              transactions={[...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8)}
+              onEdit={(t) => setEditingTransaction(t)}
+              onDelete={removeTransaction}
+            />
+          </div>
+          </>
+        )}
+
+        {section === 'transacoes' && (
           <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[260px_1fr]">
-            <div className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur lg:sticky lg:top-4 lg:h-fit">
+            <div className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur-xl lg:sticky lg:top-4 lg:h-fit">
               <TransactionsForm
                 transactions={transactions}
                 onAdd={addTransaction}
@@ -207,14 +233,39 @@ export default function DashboardPage() {
                 openAddRef={openAddRef}
               />
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
-                <TransactionsTable
-                  transactions={filteredTransactions}
-                  onEdit={(t) => setEditingTransaction(t)}
-                  onDelete={removeTransaction}
-                />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <span className="text-xs text-muted-foreground sm:mr-auto">Filtrar</span>
+                <PeriodFilter value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} />
               </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl">
+                <TransactionsTable transactions={filteredTransactions} onEdit={(t) => setEditingTransaction(t)} onDelete={removeTransaction} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {section === 'graficos' && (
+          <div className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+                <ExpensesPieChart transactions={transactions} />
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+                <AccumulatedChart summary={summary} />
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+                <IncomeVsSpendingChart summary={summary} />
+              </div>
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+                <IncomeChartCompact summary={summary} />
+              </div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-xl">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Comparacao mensal</h3>
+              <CashFlowCards summary={summary} />
             </div>
           </div>
         )}
@@ -244,37 +295,29 @@ export default function DashboardPage() {
 
         {section === 'relatorios' && (
           <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-foreground">Analise e exportacao</h3>
+              <ExportReportsButton transactions={transactions} />
+            </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
                 <ExpensesPieChart transactions={transactions} />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
                 <AccumulatedChart summary={summary} />
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
                 <IncomeVsSpendingChart summary={summary} />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
                 <IncomeChartCompact summary={summary} />
               </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur">
-              <h3 className="mb-2 text-sm font-semibold text-foreground">Fluxo por mes</h3>
+            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-xl">
+              <h3 className="mb-2 text-sm font-semibold text-foreground">Comparacao mensal</h3>
               <CashFlowCards summary={summary} />
-            </div>
-          </div>
-        )}
-
-        {section === 'notificacoes' && (
-          <div className="space-y-3">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
-              <h3 className="mb-3 text-sm font-semibold text-foreground">Contas a pagar</h3>
-              <RecurringExpensesList />
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-6 backdrop-blur">
-              <p className="text-center text-sm text-muted-foreground">Outras notificacoes aparecerao aqui.</p>
             </div>
           </div>
         )}
