@@ -84,7 +84,7 @@ export function AppShell({ section, onSectionChange, children, onLogout }: AppSh
                 type="button"
                 onClick={() => onSectionChange(item.id)}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer',
                   isActive
                     ? 'bg-primary/20 text-primary'
                     : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
@@ -147,7 +147,7 @@ export function AppShell({ section, onSectionChange, children, onLogout }: AppSh
                 type="button"
                 onClick={() => onSectionChange(item.id)}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+                  'flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
