@@ -1,24 +1,36 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState, useCallback } from 'react'
 import { formatCurrency } from '@/lib/finance'
 import {
   getTopSpendingCategory,
   getAverageMonthlyExpenses,
   type Transaction,
 } from '@/lib/finance'
-import { TrendingUp, AlertTriangle, Brain, BarChart3 } from 'lucide-react'
+import { getToken } from '@/lib/auth'
+import { AlertTriangle, Brain, Sparkles } from 'lucide-react'
 
 interface FinancialIntelligenceProps {
   transactions: Transaction[]
   monthlyExpenses: number
   monthlyIncome: number
+  balance: number
+  projectedBalance?: number
+}
+
+interface AIInsights {
+  projecao: string
+  recomendacao: string
+  risco: string | null
+  dica: string
 }
 
 export function FinancialIntelligence({
   transactions,
   monthlyExpenses,
   monthlyIncome,
+  balance,
+  projectedBalance,
 }: FinancialIntelligenceProps) {
   const topCategory = useMemo(() => getTopSpendingCategory(transactions), [transactions])
   const avgMonthly = useMemo(() => getAverageMonthlyExpenses(transactions), [transactions])

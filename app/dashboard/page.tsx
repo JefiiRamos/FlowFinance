@@ -209,6 +209,8 @@ export default function DashboardPage() {
               transactions={transactions}
               monthlyExpenses={monthlyExpenses}
               monthlyIncome={monthlyIncome}
+              balance={balance}
+              projectedBalance={projectedBalance}
             />
           </div>
           <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl">
