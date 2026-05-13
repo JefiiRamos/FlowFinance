@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type TransitionEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { clearAuth, getToken } from '@/lib/auth'
@@ -32,6 +32,7 @@ import { PeriodFilter, type PeriodValue } from '@/components/dashboard/period-fi
 import { FinancialIntelligence } from '@/components/dashboard/financial-intelligence'
 import { ExportReportsButton } from '@/components/dashboard/export-reports-button'
 import { AssistantChatPanel } from '@/components/assistant-chat-panel'
+import { cn } from '@/lib/utils'
 import { useLgUp } from '@/hooks/use-lg-up'
 import type { Transaction } from '@/lib/finance'
 import { addDays, endOfDay, endOfMonth, startOfDay, startOfMonth, subMonths } from 'date-fns'
@@ -98,6 +99,12 @@ export default function DashboardPage() {
   const openAddRef = useRef<{ open: (type?: import('@/lib/finance').TransactionType) => void } | null>(null)
   const lgUp = useLgUp()
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [assistantShellMounted, setAssistantShellMounted] = useState(false)
+  const [assistantShellOpen, setAssistantShellOpen] = useState(false)
+  const assistantOpenRef = useRef(assistantOpen)
+  const assistantExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  assistantOpenRef.current = assistantOpen
 
   const toggleAssistant = useCallback(() => {
     setAssistantOpen((o) => !o)
@@ -127,6 +134,59 @@ export default function DashboardPage() {
     }
     mql.addEventListener('change', onNarrow)
     return () => mql.removeEventListener('change', onNarrow)
+  }, [])
+
+  useEffect(() => {
+    if (!lgUp) {
+      if (assistantExitTimerRef.current) {
+        clearTimeout(assistantExitTimerRef.current)
+        assistantExitTimerRef.current = null
+      }
+      setAssistantShellMounted(false)
+      setAssistantShellOpen(false)
+    }
+  }, [lgUp])
+
+  useLayoutEffect(() => {
+    if (!lgUp || !assistantOpen) return
+    setAssistantShellMounted(true)
+    setAssistantShellOpen(false)
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setAssistantShellOpen(true))
+    })
+    return () => {
+      cancelAnimationFrame(raf1)
+      if (raf2) cancelAnimationFrame(raf2)
+    }
+  }, [assistantOpen, lgUp])
+
+  useEffect(() => {
+    if (!lgUp || assistantOpen) return
+    if (!assistantShellMounted) return
+    setAssistantShellOpen(false)
+    if (assistantExitTimerRef.current) clearTimeout(assistantExitTimerRef.current)
+    assistantExitTimerRef.current = setTimeout(() => {
+      assistantExitTimerRef.current = null
+      setAssistantShellMounted(false)
+    }, 400)
+    return () => {
+      if (assistantExitTimerRef.current) {
+        clearTimeout(assistantExitTimerRef.current)
+        assistantExitTimerRef.current = null
+      }
+    }
+  }, [assistantOpen, lgUp, assistantShellMounted])
+
+  const handleAssistantShellTransitionEnd = useCallback((e: TransitionEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return
+    if (e.propertyName !== 'transform') return
+    if (assistantOpenRef.current) return
+    if (assistantExitTimerRef.current) {
+      clearTimeout(assistantExitTimerRef.current)
+      assistantExitTimerRef.current = null
+    }
+    setAssistantShellMounted(false)
   }, [])
 
   useEffect(() => {
@@ -202,7 +262,7 @@ export default function DashboardPage() {
       onSectionChange={setSection}
       onLogout={handleLogout}
       assistantNavUsesLink={!lgUp}
-      assistantOverlayOpen={assistantOpen}
+      assistantOverlayOpen={assistantOpen || assistantShellMounted}
       onAssistantSidebarClick={toggleAssistant}
     >
       <div className="fixed inset-0 -z-10">
@@ -404,16 +464,32 @@ export default function DashboardPage() {
         <Plus className="size-8" />
       </button>
 
-      {assistantOpen && lgUp && (
+      {assistantShellMounted && lgUp && (
         <>
           <button
             type="button"
             className="fixed inset-0 z-[52] hidden bg-black/40 backdrop-blur-[1px] lg:block"
+            style={{
+              opacity: assistantShellOpen ? 1 : 0,
+              pointerEvents: assistantShellOpen ? 'auto' : 'none',
+              transition: 'opacity 300ms cubic-bezier(0.22, 1, 0.36, 1)',
+              willChange: 'opacity',
+            }}
             aria-label="Fechar assistente"
             onClick={() => setAssistantOpen(false)}
           />
-          <div className="fixed bottom-24 right-4 z-[55] hidden lg:block">
-            <AssistantChatPanel layout="overlay" onClose={() => setAssistantOpen(false)} />
+          <div
+            className={cn(
+              'fixed bottom-6 right-4 z-[55] hidden lg:block',
+              !assistantShellOpen && 'pointer-events-none'
+            )}
+          >
+            <AssistantChatPanel
+              layout="overlay"
+              overlayMotionOpen={assistantShellOpen}
+              onOverlayShellTransitionEnd={handleAssistantShellTransitionEnd}
+              onClose={() => setAssistantOpen(false)}
+            />
           </div>
         </>
       )}

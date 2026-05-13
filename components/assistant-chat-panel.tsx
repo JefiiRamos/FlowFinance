@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type TransitionEvent } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Bot, SendHorizonal, Sparkles, User, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -39,6 +39,13 @@ const SEED_MESSAGES: ChatLine[] = [
 
 const SUGGESTIONS = ['35 padaria', 'uber 18', '120 mercado hoje', '65 gasolina']
 
+const OVERLAY_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
+const OVERLAY_SHELL_MS = 300
+const OVERLAY_INNER_OPEN_MS = 190
+const OVERLAY_INNER_CLOSE_MS = 165
+const OVERLAY_INNER_OPEN_DELAY_MS = 78
+const OVERLAY_SHELL_CLOSE_DELAY_MS = 52
+
 function newId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
@@ -51,9 +58,19 @@ interface AssistantChatPanelProps {
   showBackLink?: boolean
   /** Modo janela: fechar */
   onClose?: () => void
+  /** Quando definido, o overlay usa animação de abrir/fechar (valor controlado pelo pai). */
+  overlayMotionOpen?: boolean
+  /** `transform` do shell — usado para desmontar após fechar. */
+  onOverlayShellTransitionEnd?: (e: TransitionEvent<HTMLDivElement>) => void
 }
 
-export function AssistantChatPanel({ layout, showBackLink, onClose }: AssistantChatPanelProps) {
+export function AssistantChatPanel({
+  layout,
+  showBackLink,
+  onClose,
+  overlayMotionOpen,
+  onOverlayShellTransitionEnd,
+}: AssistantChatPanelProps) {
   const isOverlay = layout === 'overlay'
   const [messages, setMessages] = useState<ChatLine[]>(SEED_MESSAGES)
   const [draft, setDraft] = useState('')
@@ -62,6 +79,35 @@ export function AssistantChatPanel({ layout, showBackLink, onClose }: AssistantC
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const motion = overlayMotionOpen !== undefined
+  const open = motion ? Boolean(overlayMotionOpen) : true
+
+  const overlayShellStyle: CSSProperties | undefined = motion
+    ? {
+        transformOrigin: 'bottom right',
+        willChange: 'transform, opacity, border-radius',
+        transform: open
+          ? 'scale(1) translate3d(0, 0, 0)'
+          : 'scale(0.13) translate3d(10px, 12px, 0)',
+        opacity: open ? 1 : 0,
+        borderRadius: open ? '1rem' : '9999px',
+        transition: open
+          ? `transform ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms, opacity ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms, border-radius ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms`
+          : `transform ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms, opacity ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms, border-radius ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms`,
+      }
+    : undefined
+
+  const overlayInnerStyle: CSSProperties | undefined = motion
+    ? {
+        willChange: 'transform, opacity',
+        transform: open ? 'translate3d(0, 0, 0)' : 'translate3d(0, 12px, 0)',
+        opacity: open ? 1 : 0,
+        transition: open
+          ? `opacity ${OVERLAY_INNER_OPEN_MS}ms ${OVERLAY_EASE} ${OVERLAY_INNER_OPEN_DELAY_MS}ms, transform ${OVERLAY_INNER_OPEN_MS}ms ${OVERLAY_EASE} ${OVERLAY_INNER_OPEN_DELAY_MS}ms`
+          : `opacity ${OVERLAY_INNER_CLOSE_MS}ms ${OVERLAY_EASE} 0ms, transform ${OVERLAY_INNER_CLOSE_MS}ms ${OVERLAY_EASE} 0ms`,
+      }
+    : undefined
 
   const send = useCallback(() => {
     const text = draft.trim()
@@ -228,10 +274,21 @@ export function AssistantChatPanel({ layout, showBackLink, onClose }: AssistantC
         role="dialog"
         aria-modal="true"
         aria-label="Assistente de gastos"
-        className="flex max-h-[min(85vh,620px)] w-[min(100vw-1.5rem,400px)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-black/55 shadow-2xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-2xl"
+        data-open={motion ? (open ? 'true' : 'false') : 'true'}
+        style={overlayShellStyle}
+        onTransitionEnd={motion ? onOverlayShellTransitionEnd : undefined}
+        className={cn(
+          'flex max-h-[min(85vh,620px)] w-[min(100vw-1.5rem,400px)] flex-col overflow-hidden border border-white/15 bg-black/55 shadow-2xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-2xl',
+          motion ? 'rounded-none' : 'rounded-2xl'
+        )}
       >
-        {header}
-        <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">{body}</div>
+        <div
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+          style={overlayInnerStyle}
+        >
+          {header}
+          <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">{body}</div>
+        </div>
       </div>
     )
   }
