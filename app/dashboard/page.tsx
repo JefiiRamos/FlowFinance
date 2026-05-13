@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
 import { clearAuth, getToken } from '@/lib/auth'
@@ -32,6 +31,8 @@ import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { PeriodFilter, type PeriodValue } from '@/components/dashboard/period-filter'
 import { FinancialIntelligence } from '@/components/dashboard/financial-intelligence'
 import { ExportReportsButton } from '@/components/dashboard/export-reports-button'
+import { AssistantChatPanel } from '@/components/assistant-chat-panel'
+import { useLgUp } from '@/hooks/use-lg-up'
 import type { Transaction } from '@/lib/finance'
 import { addDays, endOfDay, endOfMonth, startOfDay, startOfMonth, subMonths } from 'date-fns'
 
@@ -95,6 +96,12 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<PeriodValue>('month')
   const [customRange, setCustomRange] = useState<{ from: Date; to: Date } | undefined>()
   const openAddRef = useRef<{ open: (type?: import('@/lib/finance').TransactionType) => void } | null>(null)
+  const lgUp = useLgUp()
+  const [assistantOpen, setAssistantOpen] = useState(false)
+
+  const toggleAssistant = useCallback(() => {
+    setAssistantOpen((o) => !o)
+  }, [])
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -103,6 +110,33 @@ export default function DashboardPage() {
       setAuthChecked(true)
     }
   }, [router])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const q = new URLSearchParams(window.location.search).get('assistant')
+    if (q === '1') {
+      setAssistantOpen(true)
+      router.replace('/dashboard', { scroll: false })
+    }
+  }, [router])
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)')
+    const onNarrow = (e: MediaQueryListEvent) => {
+      if (!e.matches) setAssistantOpen(false)
+    }
+    mql.addEventListener('change', onNarrow)
+    return () => mql.removeEventListener('change', onNarrow)
+  }, [])
+
+  useEffect(() => {
+    if (!assistantOpen || !lgUp) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAssistantOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [assistantOpen, lgUp])
 
   const handleLogout = useCallback(async () => {
     const token = getToken()
@@ -163,7 +197,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppShell section={section} onSectionChange={setSection} onLogout={handleLogout}>
+    <AppShell
+      section={section}
+      onSectionChange={setSection}
+      onLogout={handleLogout}
+      assistantNavUsesLink={!lgUp}
+      assistantOverlayOpen={assistantOpen}
+      onAssistantSidebarClick={toggleAssistant}
+    >
       <div className="fixed inset-0 -z-10">
         <Grainient
           color1="#7c3aed"
@@ -362,6 +403,20 @@ export default function DashboardPage() {
       >
         <Plus className="size-8" />
       </button>
+
+      {assistantOpen && lgUp && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[52] hidden bg-black/40 backdrop-blur-[1px] lg:block"
+            aria-label="Fechar assistente"
+            onClick={() => setAssistantOpen(false)}
+          />
+          <div className="fixed bottom-24 right-4 z-[55] hidden lg:block">
+            <AssistantChatPanel layout="overlay" onClose={() => setAssistantOpen(false)} />
+          </div>
+        </>
+      )}
     </AppShell>
   )
 }

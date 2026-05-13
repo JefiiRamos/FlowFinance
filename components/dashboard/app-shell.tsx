@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Target,
@@ -14,6 +16,8 @@ import {
   Receipt,
   BarChart3,
   FlaskConical,
+  MessageSquareText,
+  type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -27,26 +31,53 @@ export type NavSection =
   | 'contas'
   | 'relatorios'
 
-const SIDEBAR_ITEMS: { id: NavSection; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'inicio', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'transacoes', label: 'Transacoes', icon: Receipt },
-  { id: 'graficos', label: 'Graficos', icon: BarChart3 },
-  { id: 'metas', label: 'Metas', icon: Target },
-  { id: 'simulador', label: 'Simulador', icon: FlaskConical },
-  { id: 'despesas-fixas', label: 'Despesas fixas', icon: Repeat },
-  { id: 'contas', label: 'Contas', icon: Wallet },
-  { id: 'relatorios', label: 'Relatorios', icon: FileBarChart },
+type NavEntry =
+  | { kind: 'section'; id: NavSection; label: string; icon: LucideIcon }
+  | { kind: 'link'; href: string; label: string; icon: LucideIcon }
+
+const ASSISTENTE_HREF = '/assistente'
+
+/** Ordem da sidebar: Assistente logo após o Dashboard para ficar fácil de achar. */
+const SIDEBAR_ENTRIES: NavEntry[] = [
+  { kind: 'section', id: 'inicio', label: 'Dashboard', icon: LayoutDashboard },
+  { kind: 'link', href: ASSISTENTE_HREF, label: 'Assistente', icon: MessageSquareText },
+  { kind: 'section', id: 'transacoes', label: 'Transacoes', icon: Receipt },
+  { kind: 'section', id: 'graficos', label: 'Graficos', icon: BarChart3 },
+  { kind: 'section', id: 'metas', label: 'Metas', icon: Target },
+  { kind: 'section', id: 'simulador', label: 'Simulador', icon: FlaskConical },
+  { kind: 'section', id: 'despesas-fixas', label: 'Despesas fixas', icon: Repeat },
+  { kind: 'section', id: 'contas', label: 'Contas', icon: Wallet },
+  { kind: 'section', id: 'relatorios', label: 'Relatorios', icon: FileBarChart },
 ]
+
+/** Primeiros itens na barra inferior (mobile). */
+const MOBILE_TAB_ENTRIES = SIDEBAR_ENTRIES.slice(0, 6)
 
 interface AppShellProps {
   section: NavSection
   onSectionChange: (section: NavSection) => void
   children: React.ReactNode
   onLogout: () => void
+  /** false = sidebar desktop usa botão que abre painel em vez de ir para /assistente */
+  assistantNavUsesLink?: boolean
+  assistantOverlayOpen?: boolean
+  onAssistantSidebarClick?: () => void
 }
 
-export function AppShell({ section, onSectionChange, children, onLogout }: AppShellProps) {
+export function AppShell({
+  section,
+  onSectionChange,
+  children,
+  onLogout,
+  assistantNavUsesLink = true,
+  assistantOverlayOpen = false,
+  onAssistantSidebarClick,
+}: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const pathname = usePathname()
+
+  const navRowClass =
+    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer'
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -75,23 +106,64 @@ export function AppShell({ section, onSectionChange, children, onLogout }: AppSh
           </button>
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-          {SIDEBAR_ITEMS.map((item) => {
-            const Icon = item.icon
-            const isActive = section === item.id
+          {SIDEBAR_ENTRIES.map((entry) => {
+            const Icon = entry.icon
+            if (entry.kind === 'link') {
+              const isAssistente = entry.href === ASSISTENTE_HREF
+              const usePanel = isAssistente && !assistantNavUsesLink && onAssistantSidebarClick
+              if (usePanel) {
+                const isActive = assistantOverlayOpen
+                return (
+                  <button
+                    key={entry.href}
+                    type="button"
+                    onClick={onAssistantSidebarClick}
+                    aria-pressed={isActive}
+                    className={cn(
+                      navRowClass,
+                      isActive
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                    )}
+                  >
+                    <Icon className="size-5 shrink-0" />
+                    {sidebarOpen && <span>{entry.label}</span>}
+                  </button>
+                )
+              }
+              const isActive = pathname === entry.href || pathname.startsWith(`${entry.href}/`)
+              return (
+                <Link
+                  key={entry.href}
+                  href={entry.href}
+                  className={cn(
+                    navRowClass,
+                    isActive
+                      ? 'bg-primary/20 text-primary'
+                      : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                  )}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Icon className="size-5 shrink-0" />
+                  {sidebarOpen && <span>{entry.label}</span>}
+                </Link>
+              )
+            }
+            const isActive = section === entry.id
             return (
               <button
-                key={item.id}
+                key={entry.id}
                 type="button"
-                onClick={() => onSectionChange(item.id)}
+                onClick={() => onSectionChange(entry.id)}
                 className={cn(
-                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer',
+                  navRowClass,
                   isActive
                     ? 'bg-primary/20 text-primary'
                     : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
                 )}
               >
                 <Icon className="size-5 shrink-0" />
-                {sidebarOpen && <span>{item.label}</span>}
+                {sidebarOpen && <span>{entry.label}</span>}
               </button>
             )
           })}
@@ -136,23 +208,40 @@ export function AppShell({ section, onSectionChange, children, onLogout }: AppSh
 
         <main className="flex-1 overflow-y-auto">{children}</main>
 
-        {/* Mobile bottom nav - first 5 items */}
+        {/* Mobile bottom nav — inclui Assistente junto às seções principais */}
         <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-white/10 bg-black/80 py-2 backdrop-blur-xl lg:hidden">
-          {SIDEBAR_ITEMS.slice(0, 5).map((item) => {
-            const Icon = item.icon
-            const isActive = section === item.id
+          {MOBILE_TAB_ENTRIES.map((entry) => {
+            const Icon = entry.icon
+            if (entry.kind === 'link') {
+              const isActive = pathname === entry.href || pathname.startsWith(`${entry.href}/`)
+              return (
+                <Link
+                  key={entry.href}
+                  href={entry.href}
+                  className={cn(
+                    'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-[10px] font-medium transition-colors sm:text-xs',
+                    isActive ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <Icon className="size-5 shrink-0" />
+                  <span className="truncate text-center leading-tight">{entry.label}</span>
+                </Link>
+              )
+            }
+            const isActive = section === entry.id
             return (
               <button
-                key={item.id}
+                key={entry.id}
                 type="button"
-                onClick={() => onSectionChange(item.id)}
+                onClick={() => onSectionChange(entry.id)}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer',
+                  'flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-[10px] font-medium transition-colors cursor-pointer sm:text-xs',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
-                <Icon className="size-5" />
-                <span className="truncate max-w-[4rem]">{item.label}</span>
+                <Icon className="size-5 shrink-0" />
+                <span className="truncate text-center leading-tight">{entry.label}</span>
               </button>
             )
           })}
