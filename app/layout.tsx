@@ -9,6 +9,9 @@ const _geistMono = Geist_Mono({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'FlowFinance - Gestao Financeira Inteligente',
   description: 'Planeje suas financas com projecao de renda variavel, calculo automatico de media de renda futura e recomendacao de gastos mensais.',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+  },
 }
 
 export const viewport: Viewport = {
