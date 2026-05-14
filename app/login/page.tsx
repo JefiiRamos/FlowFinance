@@ -41,7 +41,7 @@ function LoginForm() {
         return
       }
       setAuth(data.token)
-      router.push('/dashboard')
+      router.push(data.user?.onboardingCompleted ? '/dashboard' : '/onboarding')
       router.refresh()
     } catch {
       setError('Erro ao entrar')

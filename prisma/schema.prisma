@@ -11,6 +11,12 @@ model User {
   email            String    @unique
   passwordHash     String
   name             String?
+  onboardingCompleted Boolean @default(false)
+  onboardingCompletedAt DateTime?
+  monthlyIncomeTarget Float?
+  payDay           Int?
+  financialProfile String?
+  primaryGoal      String?
   createdAt        DateTime  @default(now())
   sessions         Session[]
   transactions     Transaction[]

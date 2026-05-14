@@ -111,11 +111,47 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated()) {
+    const token = getToken()
+    if (!token || !isAuthenticated()) {
       router.replace('/login')
-    } else {
-      setAuthChecked(true)
+      return
     }
+
+    const controller = new AbortController()
+
+    async function validateSession() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        })
+
+        if (res.status === 401) {
+          router.replace('/login')
+          return
+        }
+
+        const data = await res.json().catch(() => null)
+        if (!res.ok || !data) {
+          router.replace('/login')
+          return
+        }
+
+        if (!data.onboardingCompleted) {
+          router.replace('/onboarding')
+          return
+        }
+
+        setAuthChecked(true)
+      } catch (error) {
+        if ((error as Error).name !== 'AbortError') {
+          router.replace('/login')
+        }
+      }
+    }
+
+    validateSession()
+    return () => controller.abort()
   }, [router])
 
   useEffect(() => {

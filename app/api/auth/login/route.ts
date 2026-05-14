@@ -45,7 +45,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       token,
-      user: { id: user.id, email: user.email, name: user.name },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        onboardingCompleted: user.onboardingCompleted,
+      },
     })
   } catch (error) {
     console.error('[POST /api/auth/login]', error)
