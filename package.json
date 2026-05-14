@@ -10,7 +10,8 @@
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "reset-user-finances": "npx tsx scripts/reset-user-finances.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

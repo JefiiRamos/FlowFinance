@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { formatCurrency } from '@/lib/finance'
-import { Target, Plus, Trash2 } from 'lucide-react'
-
-const STORAGE_KEY = 'flowfinance-goals'
+import { Target, Plus, Trash2, Loader2 } from 'lucide-react'
+import { getToken } from '@/lib/auth'
+import { toast } from 'sonner'
 
 export interface GoalItem {
   id: string
@@ -17,25 +17,11 @@ export interface GoalItem {
   currentAmount: number
 }
 
-function loadGoals(): GoalItem[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const v = localStorage.getItem(STORAGE_KEY)
-    if (!v) return []
-    const parsed = JSON.parse(v) as GoalItem[]
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveGoals(goals: GoalItem[]) {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(goals))
-  } catch {
-    // ignore
-  }
+function authHeaders(): HeadersInit {
+  const token = getToken()
+  const h: HeadersInit = { 'Content-Type': 'application/json' }
+  if (token) (h as Record<string, string>)['Authorization'] = `Bearer ${token}`
+  return h
 }
 
 interface GoalsSectionProps {
@@ -44,33 +30,54 @@ interface GoalsSectionProps {
 
 export function GoalsSection({ balance }: GoalsSectionProps) {
   const [goals, setGoals] = useState<GoalItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
   const [newTarget, setNewTarget] = useState('')
 
-  useEffect(() => {
-    setGoals(loadGoals())
+  const fetchGoals = useCallback(async () => {
+    const res = await fetch('/api/goals', { headers: authHeaders() })
+    if (!res.ok) {
+      setGoals([])
+      return
+    }
+    const data = (await res.json()) as GoalItem[]
+    setGoals(Array.isArray(data) ? data : [])
   }, [])
 
   useEffect(() => {
-    saveGoals(goals)
-  }, [goals])
+    setLoading(true)
+    void fetchGoals().finally(() => setLoading(false))
+  }, [fetchGoals])
 
-  function addGoal() {
+  async function addGoal() {
     const name = newName.trim() || 'Meta'
     const target = parseFloat(newTarget.replace(',', '.')) || 0
     if (target <= 0) return
-    setGoals((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), name, targetAmount: target, currentAmount: 0 },
-    ])
+    const res = await fetch('/api/goals', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ name, targetAmount: target, currentAmount: 0 }),
+    })
+    if (!res.ok) {
+      toast.error('Não foi possível salvar a meta')
+      return
+    }
     setNewName('')
     setNewTarget('')
     setAdding(false)
+    await fetchGoals()
+    toast.success('Meta criada')
   }
 
-  function removeGoal(id: string) {
-    setGoals((prev) => prev.filter((g) => g.id !== id))
+  async function removeGoal(id: string) {
+    const res = await fetch(`/api/goals/${id}`, { method: 'DELETE', headers: authHeaders() })
+    if (!res.ok) {
+      toast.error('Não foi possível remover')
+      return
+    }
+    await fetchGoals()
+    toast.success('Meta removida')
   }
 
   return (
@@ -88,58 +95,73 @@ export function GoalsSection({ balance }: GoalsSectionProps) {
         )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {adding && (
-          <div className="flex flex-wrap items-end gap-2 rounded-lg border border-white/10 bg-black/20 p-3">
-            <Input
-              placeholder="Nome (ex: Viagem)"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="h-8 w-[140px] bg-white/5 text-xs"
-            />
-            <Input
-              type="number"
-              placeholder="Valor alvo"
-              value={newTarget}
-              onChange={(e) => setNewTarget(e.target.value)}
-              className="h-8 w-[100px] bg-white/5 text-xs"
-              min="0"
-              step="100"
-            />
-            <Button size="sm" className="h-8" onClick={addGoal}>
-              Adicionar
-            </Button>
-            <Button size="sm" variant="outline" className="h-8" onClick={() => setAdding(false)}>
-              Cancelar
-            </Button>
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
-        )}
-        {goals.length === 0 && !adding && (
-          <p className="text-xs text-muted-foreground">Nenhuma meta. Clique em Meta para criar.</p>
-        )}
-        {goals.map((g) => {
-          // Progresso usa o saldo total (o que você recebeu/já tem), não valor manual
-          const currentFromBalance = Math.min(balance, g.targetAmount)
-          const progress = g.targetAmount > 0 ? Math.min(100, (currentFromBalance / g.targetAmount) * 100) : 0
-          return (
-            <div key={g.id} className="rounded-lg border border-white/10 bg-black/20 p-3 transition-colors hover:bg-black/30">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-foreground text-sm">{g.name}</span>
-                <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive hover:text-destructive" onClick={() => removeGoal(g.id)}>
-                  <Trash2 className="size-3" />
+        ) : (
+          <>
+            {adding && (
+              <div className="flex flex-wrap items-end gap-2 rounded-lg border border-white/10 bg-black/20 p-3">
+                <Input
+                  placeholder="Nome (ex: Viagem)"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  className="h-8 w-[140px] bg-white/5 text-xs"
+                />
+                <Input
+                  type="number"
+                  placeholder="Valor alvo"
+                  value={newTarget}
+                  onChange={(e) => setNewTarget(e.target.value)}
+                  className="h-8 w-[100px] bg-white/5 text-xs"
+                  min="0"
+                  step="100"
+                />
+                <Button size="sm" className="h-8" onClick={() => void addGoal()}>
+                  Adicionar
+                </Button>
+                <Button size="sm" variant="outline" className="h-8" onClick={() => setAdding(false)}>
+                  Cancelar
                 </Button>
               </div>
-              <div className="mt-2 flex items-baseline justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {formatCurrency(currentFromBalance)} / {formatCurrency(g.targetAmount)}
-                </span>
-                <span className={progress >= 100 ? 'text-emerald-400' : 'text-muted-foreground'}>
-                  {progress >= 100 ? 'Concluído' : `${progress.toFixed(0)}%`}
-                </span>
-              </div>
-              <Progress value={progress} className="mt-1 h-2" />
-            </div>
-          )
-        })}
+            )}
+            {goals.length === 0 && !adding && (
+              <p className="text-xs text-muted-foreground">Nenhuma meta. Clique em Meta para criar.</p>
+            )}
+            {goals.map((g) => {
+              const currentFromBalance = Math.min(balance, g.targetAmount)
+              const progress = g.targetAmount > 0 ? Math.min(100, (currentFromBalance / g.targetAmount) * 100) : 0
+              return (
+                <div
+                  key={g.id}
+                  className="rounded-lg border border-white/10 bg-black/20 p-3 transition-colors hover:bg-black/30"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-foreground text-sm">{g.name}</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={() => void removeGoal(g.id)}
+                    >
+                      <Trash2 className="size-3" />
+                    </Button>
+                  </div>
+                  <div className="mt-2 flex items-baseline justify-between text-xs">
+                    <span className="text-muted-foreground">
+                      {formatCurrency(currentFromBalance)} / {formatCurrency(g.targetAmount)}
+                    </span>
+                    <span className={progress >= 100 ? 'text-emerald-400' : 'text-muted-foreground'}>
+                      {progress >= 100 ? 'Concluído' : `${progress.toFixed(0)}%`}
+                    </span>
+                  </div>
+                  <Progress value={progress} className="mt-1 h-2" />
+                </div>
+              )
+            })}
+          </>
+        )}
       </CardContent>
     </Card>
   )

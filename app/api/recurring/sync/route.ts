@@ -1,17 +1,22 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSessionUserId } from '@/lib/auth-server'
+import { expenseCategoryDbNameToForm } from '@/lib/expense-category-from-seed'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST() {
   try {
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json({ created: 0, message: 'Nao autenticado' })
+    }
     const rules = await prisma.recurringIncome.findMany({
-      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
+      where: { userId },
     })
     const recurringExpenses = await prisma.recurringExpense.findMany({
-      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
+      where: { userId },
+      include: { category: true },
     })
     if (rules.length === 0 && recurringExpenses.length === 0) {
       return NextResponse.json({ created: 0, message: 'Nenhuma regra' })
@@ -48,6 +53,7 @@ export async function POST() {
             type: 'income',
             description: rule.description,
             date: { gte: startOfDay, lte: endOfDay },
+            userId,
           },
         })
         if (existing) continue
@@ -58,7 +64,9 @@ export async function POST() {
             amount: rule.amount,
             date,
             description: rule.description,
-            userId: userId ?? undefined,
+            userId,
+            category: 'Outros',
+            paymentMethod: 'Outros',
           },
         })
         created++
@@ -82,10 +90,12 @@ export async function POST() {
           type: 'expense',
           description: exp.name,
           date: { gte: startOfDay, lte: endOfDay },
-          userId: userId ?? undefined,
+          userId,
         },
       })
       if (existing) continue
+
+      const categoryLabel = expenseCategoryDbNameToForm(exp.category?.name)
 
       await prisma.transaction.create({
         data: {
@@ -93,8 +103,10 @@ export async function POST() {
           amount: exp.amount,
           date,
           description: exp.name,
-          userId: userId ?? undefined,
+          userId,
           categoryId: exp.categoryId ?? undefined,
+          category: categoryLabel,
+          paymentMethod: 'Outros',
         },
       })
       created++

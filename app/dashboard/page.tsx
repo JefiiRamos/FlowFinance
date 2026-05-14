@@ -211,7 +211,7 @@ export default function DashboardPage() {
     router.refresh()
   }, [router])
 
-  const { transactions, isLoading, addTransaction, editTransaction, removeTransaction } = useTransactions()
+  const { transactions, isLoading, addTransaction, editTransaction, removeTransaction, refetch } = useTransactions()
 
   const currentMonthTx = useMemo(() => getCurrentMonthTransactions(transactions), [transactions])
   const monthlyIncome = useMemo(() => getTotalIncome(currentMonthTx), [currentMonthTx])
@@ -489,6 +489,7 @@ export default function DashboardPage() {
               overlayMotionOpen={assistantShellOpen}
               onOverlayShellTransitionEnd={handleAssistantShellTransitionEnd}
               onClose={() => setAssistantOpen(false)}
+              onTransactionCreated={refetch}
             />
           </div>
         </>

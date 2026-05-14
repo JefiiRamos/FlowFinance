@@ -15,12 +15,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
+    }
 
     const existing = await prisma.transaction.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
     }
-    if (userId && existing.userId && existing.userId !== userId) {
+    if (existing.userId !== userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 
@@ -73,9 +76,15 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
+    }
 
     const existing = await prisma.transaction.findUnique({ where: { id } })
-    if (existing && userId && existing.userId && existing.userId !== userId) {
+    if (!existing) {
+      return NextResponse.json({ error: 'Transação não encontrada' }, { status: 404 })
+    }
+    if (existing.userId !== userId) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 })
     }
 

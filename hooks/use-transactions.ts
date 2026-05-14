@@ -36,7 +36,6 @@ export function useTransactions() {
     try {
       const token = getToken()
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
-      await fetch('/api/recurring/seed', { method: 'POST', headers }).catch(() => {})
       await fetch('/api/recurring/sync', { method: 'POST', headers }).catch(() => {})
       const data = await fetchTransactions()
       setTransactions(data.map(toFrontend))

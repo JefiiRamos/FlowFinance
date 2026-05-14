@@ -12,8 +12,11 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json([])
+    }
     const transactions = await prisma.transaction.findMany({
-      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
+      where: { userId },
       orderBy: { date: 'asc' },
     })
     return NextResponse.json(transactions)
@@ -32,6 +35,11 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
+    }
+
     const body = await request.json()
 
     const parsed = createTransactionSchema.safeParse(body)
@@ -44,7 +52,6 @@ export async function POST(request: NextRequest) {
 
     const { type, amount, date, description, category, paymentMethod } = parsed.data
     const dateObj = new Date(date)
-    const userId = await getSessionUserId()
 
     const transaction = await prisma.transaction.create({
       data: {
@@ -54,7 +61,7 @@ export async function POST(request: NextRequest) {
         description: description ?? null,
         category: category ?? 'Outros',
         paymentMethod: paymentMethod ?? 'Outros',
-        userId: userId ?? undefined,
+        userId,
       },
     })
 

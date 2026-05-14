@@ -2,7 +2,8 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Assistente de gastos | FlowFinance',
-  description: 'Envie mensagens curtas sobre o que gastou. Em breve, o assistente registrará automaticamente no dashboard.',
+  description:
+    'Assistente com OpenAI: descreva gastos ou receitas em frases curtas e registre automaticamente no dashboard.',
 }
 
 export default function AssistenteLayout({ children }: { children: React.ReactNode }) {

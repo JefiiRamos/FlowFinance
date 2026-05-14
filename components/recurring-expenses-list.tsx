@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { formatCurrency } from '@/lib/finance'
-import { Repeat, Plus, Loader2 } from 'lucide-react'
+import { Repeat, Plus, Loader2, Trash2 } from 'lucide-react'
 import { getToken } from '@/lib/auth'
 import { toast } from 'sonner'
 
@@ -66,6 +66,19 @@ export function RecurringExpensesList() {
     setAdding(false)
     await fetchItems()
     toast.success('Despesa recorrente adicionada')
+  }
+
+  async function handleDelete(id: string) {
+    const token = getToken()
+    const headers: HeadersInit = {}
+    if (token) (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`
+    const res = await fetch(`/api/recurring-expenses/${id}`, { method: 'DELETE', headers })
+    if (!res.ok && res.status !== 204) {
+      toast.error('Erro ao remover')
+      return
+    }
+    await fetchItems()
+    toast.success('Removido')
   }
 
   const currentDay = new Date().getDate()
@@ -134,15 +147,27 @@ export function RecurringExpensesList() {
               return (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-white/10 bg-black/20 px-3 py-2"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2"
                 >
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground">{item.name}</p>
                     <p className="text-[10px] text-muted-foreground">
                       Vencimento: dia {item.dueDay} · {status}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-red-400">{formatCurrency(item.amount)}</span>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-sm font-semibold text-red-400">{formatCurrency(item.amount)}</span>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="size-8 text-destructive hover:text-destructive"
+                      aria-label="Remover despesa recorrente"
+                      onClick={() => void handleDelete(item.id)}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
                 </div>
               )
             })}

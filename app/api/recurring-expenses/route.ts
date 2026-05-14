@@ -7,8 +7,11 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json([])
+    }
     const items = await prisma.recurringExpense.findMany({
-      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
+      where: { userId },
       orderBy: { dueDay: 'asc' },
     })
     return NextResponse.json(items)
@@ -27,12 +30,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dados invalidos' }, { status: 400 })
     }
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
+    }
+
     const item = await prisma.recurringExpense.create({
       data: {
         name: String(name),
         amount,
         dueDay: Math.min(31, Math.max(1, day)),
-        userId: userId ?? undefined,
+        userId,
       },
     })
     return NextResponse.json(item, { status: 201 })

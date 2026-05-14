@@ -1,0 +1,9 @@
+import { z } from 'zod'
+
+export const createGoalSchema = z.object({
+  name: z.string().min(1).max(200),
+  targetAmount: z.number().positive(),
+  currentAmount: z.number().min(0).optional(),
+})
+
+export const updateGoalSchema = createGoalSchema.partial()

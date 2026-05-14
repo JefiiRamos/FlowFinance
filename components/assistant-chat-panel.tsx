@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type TransitionEvent } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Bot, SendHorizonal, Sparkles, User, X } from 'lucide-react'
+import { ArrowLeft, Bot, Loader2, SendHorizonal, Sparkles, User, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
+import { getToken } from '@/lib/auth'
 
 type ChatRole = 'user' | 'assistant'
 
@@ -17,23 +18,11 @@ export interface ChatLine {
   meta?: string
 }
 
-const SEED_MESSAGES: ChatLine[] = [
+const WELCOME_MESSAGES: ChatLine[] = [
   {
-    id: '1',
+    id: 'welcome',
     role: 'assistant',
-    body: 'Olá! Descreva em uma frase o que você gastou. Eu entendo valores curtos como “42 uber” ou “mercado 180 ontem”.',
-    meta: 'Fluxo em desenvolvimento — só visual por enquanto',
-  },
-  {
-    id: '2',
-    role: 'user',
-    body: '28 padaria de manhã',
-  },
-  {
-    id: '3',
-    role: 'assistant',
-    body: 'Perfeito. Quando estiver ativo, isso viraria uma despesa de R$ 28,00 em Alimentação no seu dashboard.',
-    meta: 'Pré-visualização',
+    body: 'Olá! Descreva em uma frase o que gastou ou recebeu. Entendo atalhos como “42 uber”, “mercado 180 ontem” ou “salário 4500”. Quando der para identificar valor e tipo, registro no seu dashboard.',
   },
 ]
 
@@ -62,6 +51,8 @@ interface AssistantChatPanelProps {
   overlayMotionOpen?: boolean
   /** `transform` do shell — usado para desmontar após fechar. */
   onOverlayShellTransitionEnd?: (e: TransitionEvent<HTMLDivElement>) => void
+  /** Chamado após a IA registrar uma transação no servidor (ex.: atualizar o dashboard). */
+  onTransactionCreated?: () => void | Promise<void>
 }
 
 export function AssistantChatPanel({
@@ -70,10 +61,12 @@ export function AssistantChatPanel({
   onClose,
   overlayMotionOpen,
   onOverlayShellTransitionEnd,
+  onTransactionCreated,
 }: AssistantChatPanelProps) {
   const isOverlay = layout === 'overlay'
-  const [messages, setMessages] = useState<ChatLine[]>(SEED_MESSAGES)
+  const [messages, setMessages] = useState<ChatLine[]>(WELCOME_MESSAGES)
   const [draft, setDraft] = useState('')
+  const [isSending, setIsSending] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -109,22 +102,89 @@ export function AssistantChatPanel({
       }
     : undefined
 
-  const send = useCallback(() => {
+  const send = useCallback(async () => {
     const text = draft.trim()
-    if (!text) return
+    if (!text || isSending) return
+
+    const token = getToken()
+    if (!token) {
+      setMessages((prev) => [
+        ...prev,
+        { id: newId(), role: 'user', body: text },
+        {
+          id: newId(),
+          role: 'assistant',
+          body: 'Sua sessão expirou ou você não está logado. Entre de novo para usar o assistente.',
+        },
+      ])
+      setDraft('')
+      return
+    }
+
+    const userLine: ChatLine = { id: newId(), role: 'user', body: text }
+    const history = [...messages, userLine]
+    setMessages(history)
     setDraft('')
-    setMessages((prev) => [
-      ...prev,
-      { id: newId(), role: 'user', body: text },
-      {
-        id: newId(),
-        role: 'assistant',
-        body:
-          'Recebido. No modo completo, eu classificaria e somaria isso nas suas despesas do mês — por aqui é só o layout da conversa.',
-        meta: 'Resposta de demonstração',
-      },
-    ])
-  }, [draft])
+    setIsSending(true)
+
+    try {
+      const res = await fetch('/api/ai/expense-assistant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          messages: history.map((m) => ({ role: m.role, content: m.body })),
+        }),
+      })
+
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string
+        reply?: string
+        created?: boolean
+      }
+
+      if (!res.ok) {
+        const errMsg =
+          data.error === 'OPENAI_API_KEY nao configurada'
+            ? 'A chave da OpenAI não está configurada no servidor (OPENAI_API_KEY).'
+            : data.error ?? 'Não foi possível obter resposta agora. Tente de novo em instantes.'
+        setMessages((prev) => [
+          ...prev,
+          { id: newId(), role: 'assistant', body: errMsg, meta: res.status === 401 ? 'Sessão' : 'Erro' },
+        ])
+        return
+      }
+
+      const reply = typeof data.reply === 'string' ? data.reply : 'Sem resposta da IA.'
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newId(),
+          role: 'assistant',
+          body: reply,
+          meta: data.created ? 'Registrado no dashboard' : undefined,
+        },
+      ])
+
+      if (data.created) {
+        await onTransactionCreated?.()
+      }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: newId(),
+          role: 'assistant',
+          body: 'Falha de rede ao contatar o servidor. Verifique sua conexão e tente novamente.',
+          meta: 'Erro',
+        },
+      ])
+    } finally {
+      setIsSending(false)
+    }
+  }, [draft, isSending, messages, onTransactionCreated])
 
   const header = (
     <div
@@ -147,7 +207,7 @@ export function AssistantChatPanel({
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold text-foreground">Assistente de gastos</h2>
           <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
-            {isOverlay ? 'Mensagens curtas — preview' : 'Mensagens curtas — depois entram no dashboard automaticamente'}
+            {isOverlay ? 'OpenAI + suas transações' : 'OpenAI — registra gastos e receitas no dashboard'}
           </p>
         </div>
       </div>
@@ -166,7 +226,7 @@ export function AssistantChatPanel({
       {!isOverlay && (
         <span className="hidden shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:inline-flex">
           <Sparkles className="size-3 text-fuchsia-400" />
-          Preview UI
+          IA ativa
         </span>
       )}
     </div>
@@ -175,7 +235,8 @@ export function AssistantChatPanel({
   const notice = !isOverlay && (
     <div className="mb-3 shrink-0 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 backdrop-blur-xl">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Escreva como anotaria no bloco de notas. Esta tela é só o design da experiência; nada é salvo no servidor ainda.
+        O assistente usa a API da OpenAI e pode registrar despesas e receitas na sua conta. Seja explícito com valores e datas
+        quando quiser que algo entre no extrato.
       </p>
     </div>
   )
@@ -250,17 +311,20 @@ export function AssistantChatPanel({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault()
-              send()
+              void send()
             }
           }}
           placeholder="Ex.: 45 almoço com cliente"
           rows={isOverlay ? 2 : 2}
+          disabled={isSending}
           className="min-h-[3.5rem] resize-none border-white/10 bg-black/20 text-sm sm:min-h-[4.5rem]"
         />
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 sm:mt-2">
-          <span className="text-[10px] text-muted-foreground sm:text-[11px]">Enter envia · Shift+Enter nova linha</span>
-          <Button type="button" size="sm" className="gap-1.5 rounded-lg" onClick={send}>
-            <SendHorizonal className="size-4" />
+          <span className="text-[10px] text-muted-foreground sm:text-[11px]">
+            {isSending ? 'Aguardando a IA…' : 'Enter envia · Shift+Enter nova linha'}
+          </span>
+          <Button type="button" size="sm" className="gap-1.5 rounded-lg" onClick={() => void send()} disabled={isSending}>
+            {isSending ? <Loader2 className="size-4 animate-spin" /> : <SendHorizonal className="size-4" />}
             Enviar
           </Button>
         </div>

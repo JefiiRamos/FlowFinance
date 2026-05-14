@@ -13,8 +13,16 @@ const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 export async function GET() {
   try {
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json({
+        totalIncome: 0,
+        totalExpense: 0,
+        balance: 0,
+        monthlyFlow: [],
+      })
+    }
     const transactions = await prisma.transaction.findMany({
-      where: userId ? { OR: [{ userId }, { userId: null }] } : {},
+      where: { userId },
       orderBy: { date: 'asc' },
     })
 

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { isAuthenticated } from '@/lib/auth'
 import { AssistantChatPanel } from '@/components/assistant-chat-panel'
 import { useLgUp } from '@/hooks/use-lg-up'
+import { useTransactions } from '@/hooks/use-transactions'
 
 const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.Grainient), {
   ssr: false,
@@ -14,6 +15,7 @@ const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.G
 export default function AssistentePage() {
   const router = useRouter()
   const lgUp = useLgUp()
+  const { refetch } = useTransactions()
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function AssistentePage() {
         />
       </div>
 
-      <AssistantChatPanel layout="page" showBackLink />
+      <AssistantChatPanel layout="page" showBackLink onTransactionCreated={refetch} />
     </div>
   )
 }

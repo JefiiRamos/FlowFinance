@@ -9,8 +9,11 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET() {
   const userId = await getSessionUserId()
+  if (!userId) {
+    return NextResponse.json([])
+  }
   const items = await prisma.recurringIncome.findMany({
-    where: userId ? { OR: [{ userId }, { userId: null }] } : {},
+    where: { userId },
     orderBy: [{ dayOfMonth: 'asc' }, { startMonth: 'asc' }],
   })
   return NextResponse.json(items)
@@ -45,6 +48,9 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = await getSessionUserId()
+    if (!userId) {
+      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
+    }
 
     const item = await prisma.recurringIncome.create({
       data: {
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
         dayOfMonth: day,
         startMonth: start,
         endMonth: end,
-        userId: userId ?? undefined,
+        userId,
       },
     })
 

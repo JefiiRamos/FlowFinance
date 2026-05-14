@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -14,29 +14,15 @@ import {
 } from '@/components/ui/table'
 import { type Transaction, formatCurrency, MONTH_NAMES } from '@/lib/finance'
 import { CATEGORIES } from '@/lib/constants'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Loader2 } from 'lucide-react'
+import { getToken } from '@/lib/auth'
+import { toast } from 'sonner'
 
-const STORAGE_KEY = 'flowfinance-budget-limits'
-
-function loadLimits(): Record<string, number> {
-  if (typeof window === 'undefined') return {}
-  try {
-    const v = localStorage.getItem(STORAGE_KEY)
-    if (!v) return {}
-    const parsed = JSON.parse(v) as Record<string, number>
-    return typeof parsed === 'object' && parsed !== null ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function saveLimits(limits: Record<string, number>) {
-  if (typeof window === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(limits))
-  } catch {
-    // ignore
-  }
+function authHeaders(): HeadersInit {
+  const token = getToken()
+  const h: HeadersInit = { 'Content-Type': 'application/json' }
+  if (token) (h as Record<string, string>)['Authorization'] = `Bearer ${token}`
+  return h
 }
 
 interface BudgetTableProps {
@@ -45,16 +31,24 @@ interface BudgetTableProps {
 
 export function BudgetTable({ transactions }: BudgetTableProps) {
   const [limits, setLimits] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
 
-  useEffect(() => {
-    setLimits(loadLimits())
+  const fetchLimits = useCallback(async () => {
+    const res = await fetch('/api/budget-limits', { headers: authHeaders() })
+    if (!res.ok) {
+      setLimits({})
+      return
+    }
+    const data = (await res.json()) as Record<string, number>
+    setLimits(typeof data === 'object' && data !== null && !Array.isArray(data) ? data : {})
   }, [])
 
   useEffect(() => {
-    saveLimits(limits)
-  }, [limits])
+    setLoading(true)
+    void fetchLimits().finally(() => setLoading(false))
+  }, [fetchLimits])
 
   const now = new Date()
   const currentYear = now.getFullYear()
@@ -81,8 +75,22 @@ export function BudgetTable({ transactions }: BudgetTableProps) {
     })
   }, [limits, byCategory])
 
-  function setLimit(category: string, value: number) {
-    setLimits((prev) => ({ ...prev, [category]: Math.max(0, value) }))
+  async function setLimit(category: string, value: number) {
+    const v = Math.max(0, value)
+    const next: Record<string, number> = { ...limits }
+    if (v <= 0) delete next[category]
+    else next[category] = v
+
+    const res = await fetch('/api/budget-limits', {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ limits: next }),
+    })
+    if (!res.ok) {
+      toast.error('Não foi possível salvar o limite')
+      return
+    }
+    setLimits(next)
     setEditingCategory(null)
   }
 
@@ -91,23 +99,27 @@ export function BudgetTable({ transactions }: BudgetTableProps) {
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium">Orçamento mensal</CardTitle>
         <p className="text-[10px] text-muted-foreground">
-          {MONTH_NAMES[currentMonth - 1]} {currentYear} · Defina limites por categoria
+          {MONTH_NAMES[currentMonth - 1]} {currentYear} · Defina limites por categoria (salvo na conta)
         </p>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-lg border border-white/10">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-white/10 hover:bg-transparent">
-                <TableHead className="text-muted-foreground">Categoria</TableHead>
-                <TableHead className="text-muted-foreground">Limite</TableHead>
-                <TableHead className="text-muted-foreground">Gasto atual</TableHead>
-                <TableHead className="text-muted-foreground">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {
-                rows.map((r) => (
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="size-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-white/10">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-white/10 hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">Categoria</TableHead>
+                  <TableHead className="text-muted-foreground">Limite</TableHead>
+                  <TableHead className="text-muted-foreground">Gasto atual</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
                   <TableRow key={r.category} className="border-white/10">
                     <TableCell className="font-medium text-foreground text-xs">{r.category}</TableCell>
                     <TableCell>
@@ -120,9 +132,15 @@ export function BudgetTable({ transactions }: BudgetTableProps) {
                             className="h-7 w-24 text-xs"
                             min="0"
                             step="50"
-                            onKeyDown={(e) => e.key === 'Enter' && setLimit(r.category, parseFloat(editValue) || 0)}
+                            onKeyDown={(e) =>
+                              e.key === 'Enter' && void setLimit(r.category, parseFloat(editValue) || 0)
+                            }
                           />
-                          <Button size="sm" className="h-7 text-xs" onClick={() => setLimit(r.category, parseFloat(editValue) || 0)}>
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => void setLimit(r.category, parseFloat(editValue) || 0)}
+                          >
                             Ok
                           </Button>
                         </div>
@@ -131,7 +149,10 @@ export function BudgetTable({ transactions }: BudgetTableProps) {
                           variant="ghost"
                           size="sm"
                           className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                          onClick={() => { setEditingCategory(r.category); setEditValue(String(r.limit)) }}
+                          onClick={() => {
+                            setEditingCategory(r.category)
+                            setEditValue(String(r.limit))
+                          }}
                         >
                           {r.limit > 0 ? formatCurrency(r.limit) : 'Definir'}
                         </Button>
@@ -145,19 +166,17 @@ export function BudgetTable({ transactions }: BudgetTableProps) {
                           Acima do limite
                         </span>
                       )}
-                      {r.status === 'warning' && (
-                        <span className="text-xs text-amber-400">Próximo do limite</span>
-                      )}
+                      {r.status === 'warning' && <span className="text-xs text-amber-400">Próximo do limite</span>}
                       {r.status === 'ok' && r.limit > 0 && (
                         <span className="text-xs text-emerald-400">Dentro do limite</span>
                       )}
                     </TableCell>
                   </TableRow>
-                ))
-              }
-            </TableBody>
-          </Table>
-        </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
