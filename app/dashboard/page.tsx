@@ -301,33 +301,7 @@ export default function DashboardPage() {
       assistantOverlayOpen={assistantOpen || assistantShellMounted}
       onAssistantSidebarClick={toggleAssistant}
     >
-      <div className="fixed inset-0 -z-10">
-        <Grainient
-          color1="#7c3aed"
-          color2="#0c0a14"
-          color3="#1e1b2e"
-          timeSpeed={0.25}
-          colorBalance={0}
-          warpStrength={1}
-          warpFrequency={5}
-          warpSpeed={2}
-          warpAmplitude={50}
-          blendAngle={0}
-          blendSoftness={0.05}
-          rotationAmount={500}
-          noiseScale={2}
-          grainAmount={0.1}
-          grainScale={2}
-          grainAnimated={false}
-          contrast={1.5}
-          gamma={1}
-          saturation={1}
-          centerX={0}
-          centerY={0}
-          zoom={0.9}
-          className="h-full w-full"
-        />
-      </div>
+      <div className="fixed inset-0 -z-10 bg-[#0c0a14]" />
 
       <div className="flex flex-col gap-3 p-3 md:p-4">
         <SummaryCards

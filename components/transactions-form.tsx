@@ -77,21 +77,27 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
   }, [])
 
   async function handleSave() {
+    if (isSaving) return
+
     if (!description.trim()) {
       toast.error('Preencha a descrição')
       return
     }
+
     const parsedAmount = parseFloat(amount)
+
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       toast.error('Informe um valor válido')
       return
     }
+
     if (!date?.trim()) {
       toast.error('Informe a data')
       return
     }
 
     setIsSaving(true)
+
     try {
       const data: TransactionFormData = {
         type: transactionType,
@@ -101,11 +107,13 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
         category,
         paymentMethod,
       }
+
       if (editing) {
         await onEdit(editing.id, data)
       } else {
         await onAdd(data)
       }
+
       resetForm()
       setIsOpen(false)
       toast.success(editing ? 'Transação atualizada' : 'Transação adicionada')
@@ -192,9 +200,8 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
               </div>
               <div className="flex items-center gap-1">
                 <span
-                  className={`text-xs font-semibold ${
-                    t.type === 'income' ? 'text-emerald-400' : 'text-red-400'
-                  }`}
+                  className={`text-xs font-semibold ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'
+                    }`}
                 >
                   {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                 </span>

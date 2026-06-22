@@ -1,71 +1,123 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSessionUserId } from '@/lib/auth-server'
+import { expenseCategoryDbNameToForm } from '@/lib/expense-category-from-seed'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * GET /api/recurring - Lista rendas recorrentes do usuário
- */
-export async function GET() {
-  const userId = await getSessionUserId()
-  if (!userId) {
-    return NextResponse.json([])
-  }
-  const items = await prisma.recurringIncome.findMany({
-    where: { userId },
-    orderBy: [{ dayOfMonth: 'asc' }, { startMonth: 'asc' }],
-  })
-  return NextResponse.json(items)
+function pad(value: number) {
+  return String(value).padStart(2, '0')
 }
 
-/**
- * POST /api/recurring - Cria uma nova renda recorrente
- */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    const body = await request.json()
-    const { description, amount, dayOfMonth, startMonth, endMonth } = body
-
-    const day = Number(dayOfMonth)
-    const start = Number(startMonth)
-    const end = Number(endMonth)
-
-    if (!description || typeof description !== 'string') {
-      return NextResponse.json({ error: 'Descrição obrigatória' }, { status: 400 })
-    }
-    if (typeof amount !== 'number' || amount <= 0) {
-      return NextResponse.json({ error: 'Valor inválido' }, { status: 400 })
-    }
-    if (!Number.isInteger(day) || day < 1 || day > 31) {
-      return NextResponse.json({ error: 'Dia do mês inválido' }, { status: 400 })
-    }
-    if (!Number.isInteger(start) || start < 1 || start > 12) {
-      return NextResponse.json({ error: 'Mês inicial inválido' }, { status: 400 })
-    }
-    if (!Number.isInteger(end) || end < 1 || end > 12) {
-      return NextResponse.json({ error: 'Mês final inválido' }, { status: 400 })
-    }
-
     const userId = await getSessionUserId()
+
     if (!userId) {
-      return NextResponse.json({ error: 'Nao autenticado' }, { status: 401 })
+      return NextResponse.json({ created: 0, message: 'Nao autenticado' })
     }
 
-    const item = await prisma.recurringIncome.create({
-      data: {
-        description: description.trim(),
-        amount,
-        dayOfMonth: day,
-        startMonth: start,
-        endMonth: end,
-        userId,
-      },
+    const rules = await prisma.recurringIncome.findMany({
+      where: { userId },
     })
 
-    return NextResponse.json(item, { status: 201 })
+    const recurringExpenses = await prisma.recurringExpense.findMany({
+      where: { userId },
+      include: { category: true },
+    })
+
+    if (rules.length === 0 && recurringExpenses.length === 0) {
+      return NextResponse.json({ created: 0, message: 'Nenhuma regra' })
+    }
+
+    const now = new Date()
+    const year = now.getFullYear()
+    const today = now.getDate()
+    const currentMonth = now.getMonth() + 1
+    let created = 0
+
+    for (const rule of rules) {
+      const start = rule.startMonth
+      const end = rule.endMonth
+
+      const months =
+        start <= end
+          ? Array.from({ length: end - start + 1 }, (_, i) => start + i)
+          : [
+              ...Array.from({ length: 12 - start + 1 }, (_, i) => start + i),
+              ...Array.from({ length: end }, (_, i) => i + 1),
+            ]
+
+      for (const month of months) {
+        if (month < 1 || month > 12) continue
+
+        const lastDay = new Date(year, month, 0).getDate()
+        const day = Math.min(rule.dayOfMonth, lastDay)
+        const hasPassed = month < currentMonth || (month === currentMonth && today >= day)
+
+        if (!hasPassed) continue
+
+        const date = new Date(year, month - 1, day)
+        const recurringKey = `income:${userId}:${rule.id}:${year}-${pad(month)}`
+
+        const transaction = await prisma.transaction.upsert({
+          where: { recurringKey },
+          update: {},
+          create: {
+            recurringKey,
+            source: 'recurring',
+            type: 'income',
+            amount: rule.amount,
+            date,
+            description: rule.description,
+            userId,
+            category: 'Outros',
+            paymentMethod: 'Outros',
+          },
+        })
+
+        if (transaction.createdAt.getTime() > Date.now() - 5000) {
+          created++
+        }
+      }
+    }
+
+    for (const exp of recurringExpenses) {
+      const lastDay = new Date(year, currentMonth, 0).getDate()
+      const day = Math.min(exp.dueDay, lastDay)
+      const hasPassed = today >= day
+
+      if (!hasPassed) continue
+
+      const date = new Date(year, currentMonth - 1, day)
+      const categoryLabel = expenseCategoryDbNameToForm(exp.category?.name)
+      const recurringKey = `expense:${userId}:${exp.id}:${year}-${pad(currentMonth)}`
+
+      const transaction = await prisma.transaction.upsert({
+        where: { recurringKey },
+        update: {},
+        create: {
+          recurringKey,
+          source: 'recurring',
+          type: 'expense',
+          amount: exp.amount,
+          date,
+          description: exp.name,
+          userId,
+          categoryId: exp.categoryId ?? undefined,
+          category: categoryLabel,
+          paymentMethod: 'Outros',
+        },
+      })
+
+      if (transaction.createdAt.getTime() > Date.now() - 5000) {
+        created++
+      }
+    }
+
+    return NextResponse.json({ created })
   } catch (error) {
-    console.error('[POST /api/recurring]', error)
-    return NextResponse.json({ error: 'Erro ao criar renda recorrente' }, { status: 500 })
+    console.error('[POST /api/recurring/sync]', error)
+    return NextResponse.json({ error: 'Erro ao sincronizar' }, { status: 500 })
   }
 }

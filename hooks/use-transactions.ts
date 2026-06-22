@@ -30,13 +30,21 @@ export function useTransactions() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const refetch = useCallback(async () => {
+  const refetch = useCallback(async (syncRecurring = true) => {
     setIsLoading(true)
     setError(null)
+
     try {
       const token = getToken()
       const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
-      await fetch('/api/recurring/sync', { method: 'POST', headers }).catch(() => {})
+
+      if (syncRecurring) {
+        await fetch('/api/recurring/sync', {
+          method: 'POST',
+          headers,
+        }).catch(() => {})
+      }
+
       const data = await fetchTransactions()
       setTransactions(data.map(toFrontend))
     } catch (e) {
@@ -63,7 +71,11 @@ export function useTransactions() {
 
   const removeTransaction = useCallback(async (id: string) => {
     await deleteTransaction(id)
-    await refetch()
+
+    // Importante:
+    // Depois de deletar, não roda /api/recurring/sync,
+    // senão a transação recorrente pode ser criada de novo imediatamente.
+    await refetch(false)
   }, [refetch])
 
   return {

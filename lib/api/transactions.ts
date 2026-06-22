@@ -67,8 +67,23 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: string): Promise<void> {
-  const res = await fetch(`${BASE}/transactions/${id}`, { method: 'DELETE', headers: authHeaders() })
-  if (!res.ok && res.status !== 204) {
+  const res = await fetch(`${BASE}/transactions/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  })
+
+  // 204 = deletou com sucesso
+  if (res.status === 204) {
+    return
+  }
+
+  // 404 = a transação já não existe mais no banco.
+  // Para o front, tratamos como sucesso para não quebrar a tela.
+  if (res.status === 404) {
+    return
+  }
+
+  if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.error ?? 'Erro ao deletar transação')
   }

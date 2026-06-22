@@ -63,20 +63,28 @@ model Account {
 
 model Transaction {
   id              String   @id @default(uuid())
-  type            String   // income | expense
+  type            String
   amount          Float
   date            DateTime
   description     String?
-  category        String?  @default("Outros")  // fallback legado
-  paymentMethod   String?  @default("Outros")  // fallback legado
+  category        String?  @default("Outros")
+  paymentMethod   String?  @default("Outros")
+
   userId          String?
   user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   categoryId      String?
-  categoryRel     Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryRel     Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
   paymentMethodId String?
   paymentMethodRel PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+
   accountId       String?
   account         Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  source          String?  @default("manual")
+  recurringKey    String?  @unique
+
   createdAt       DateTime @default(now())
 }
 
