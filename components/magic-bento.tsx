@@ -4,9 +4,9 @@ import { useRef, useEffect, useCallback, useState, type CSSProperties, type Reac
 import { gsap } from 'gsap'
 import './MagicBento.css'
 
-const DEFAULT_PARTICLE_COUNT = 12
+const DEFAULT_PARTICLE_COUNT = 0
 const DEFAULT_SPOTLIGHT_RADIUS = 300
-const DEFAULT_GLOW_COLOR = '132, 0, 255'
+const DEFAULT_GLOW_COLOR = '255, 255, 255'
 const MOBILE_BREAKPOINT = 768
 
 export type MagicBentoItem = {
@@ -19,40 +19,40 @@ export type MagicBentoItem = {
 
 const defaultCardData: MagicBentoItem[] = [
   {
-    color: '#060010',
-    title: 'Analytics',
-    description: 'Track user behavior',
-    label: 'Insights',
+    color: 'transparent',
+    label: 'Saldo Atual',
+    title: 'R$ 8.420',
+    description: '+12% em relação ao mês anterior',
   },
   {
-    color: '#060010',
-    title: 'Dashboard',
-    description: 'Centralized data view',
-    label: 'Overview',
+    color: 'transparent',
+    label: 'Gasto Seguro',
+    title: 'R$ 2.315',
+    description: 'Valor recomendado para este mês',
   },
   {
-    color: '#060010',
-    title: 'Collaboration',
-    description: 'Work together seamlessly',
-    label: 'Teamwork',
+    color: 'transparent',
+    label: 'Projeção Anual',
+    title: 'R$ 58.700',
+    description: 'Estimativa baseada na sua média atual',
   },
   {
-    color: '#060010',
-    title: 'Automation',
-    description: 'Streamline workflows',
-    label: 'Efficiency',
+    color: 'transparent',
+    label: 'Reserva',
+    title: '83%',
+    description: 'Meta de emergência quase concluída',
   },
   {
-    color: '#060010',
-    title: 'Integration',
-    description: 'Connect favorite tools',
-    label: 'Connectivity',
+    color: 'transparent',
+    label: 'Despesas Fixas',
+    title: 'R$ 1.280',
+    description: 'Compromissos recorrentes',
   },
   {
-    color: '#060010',
-    title: 'Security',
-    description: 'Enterprise-grade protection',
-    label: 'Protection',
+    color: 'transparent',
+    label: 'Economia',
+    title: '+R$ 740',
+    description: 'Acumulado neste mês',
   },
 ]
 
@@ -115,7 +115,7 @@ export const ParticleCard = ({
   style,
   particleCount = DEFAULT_PARTICLE_COUNT,
   glowColor = DEFAULT_GLOW_COLOR,
-  enableTilt = true,
+  enableTilt = false,
   clickEffect = false,
   enableMagnetism = false,
 }: ParticleCardProps) => {
@@ -530,7 +530,7 @@ type MagicBentoProps = {
 
 export const MagicBento = ({
   textAutoHide = true,
-  enableStars = true,
+  enableStars = false,
   enableSpotlight = true,
   enableBorderGlow = true,
   disableAnimations = false,
@@ -539,7 +539,7 @@ export const MagicBento = ({
   enableTilt = false,
   glowColor = DEFAULT_GLOW_COLOR,
   clickEffect = true,
-  enableMagnetism = true,
+  enableMagnetism = false,
   items,
 }: MagicBentoProps) => {
   const gridRef = useRef<HTMLDivElement>(null)
@@ -577,7 +577,7 @@ export const MagicBento = ({
                 <div className="magic-bento-card__label">{card.label}</div>
               </div>
               <div className="magic-bento-card__content">
-                <h2 className="magic-bento-card__title">{card.title}</h2>
+                <h2 className="magic-bento-card__title font-bold tracking-tight">{card.title}</h2>
                 <p className="magic-bento-card__description">{card.description}</p>
                 {card.chart && (
                   <div className="magic-bento-card__chart mt-2 h-[60px] min-w-0 flex-1">

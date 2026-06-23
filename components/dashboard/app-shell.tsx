@@ -77,20 +77,22 @@ export function AppShell({
   const pathname = usePathname()
 
   const navRowClass =
-    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer'
+    'flex w-full items-center gap-4 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 cursor-pointer'
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 hidden h-screen flex-col border-r border-white/10 bg-black/40 backdrop-blur-xl transition-all duration-300 lg:flex',
-          sidebarOpen ? 'w-56' : 'w-16'
+          'fixed left-4 top-4 bottom-4 z-40 hidden flex-col rounded-[28px] border border-white/[0.06] bg-[#0b0d14]/95 shadow-[0_20px_80px_rgba(0,0,0,0.45)] backdrop-blur-2xl transition-all duration-300 lg:flex',
+          sidebarOpen ? 'w-72' : 'w-20'
         )}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-3">
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-white/[0.05] px-5">
           {sidebarOpen && (
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-sm font-bold text-transparent">FlowFinance 3.0</span>
+            <span className="text-xl font-bold tracking-tight text-white">
+              FlowFinance
+            </span>
           )}
           <button
             type="button"
@@ -122,8 +124,8 @@ export function AppShell({
                     className={cn(
                       navRowClass,
                       isActive
-                        ? 'bg-primary/20 text-primary'
-                        : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                        ? 'bg-[#151a2c] text-white shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
+                        : 'text-slate-400 hover:bg-white/[0.04] hover:text-white'
                     )}
                   >
                     <Icon className="size-5 shrink-0" />
@@ -139,8 +141,8 @@ export function AppShell({
                   className={cn(
                     navRowClass,
                     isActive
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                      ? 'bg-[#151a2c] text-white shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
+                      : 'text-slate-400 hover:bg-white/[0.04] hover:text-white'
                   )}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -158,8 +160,8 @@ export function AppShell({
                 className={cn(
                   navRowClass,
                   isActive
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                    ? 'bg-[#151a2c] text-white shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
+                    : 'text-slate-400 hover:bg-white/[0.04] hover:text-white'
                 )}
               >
                 <Icon className="size-5 shrink-0" />
@@ -168,7 +170,24 @@ export function AppShell({
             )
           })}
         </nav>
-        <div className="border-t border-white/10 p-2">
+        <div className="border-t border-white/[0.05] p-4">
+        {sidebarOpen && (
+          <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white/[0.03] p-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
+              <User className="size-5 text-primary" />
+            </div>
+
+            <div>
+              <p className="text-sm font-medium text-white">
+                Jeferson
+              </p>
+
+              <p className="text-xs text-slate-400">
+                FlowFinance
+              </p>
+            </div>
+          </div>
+        )}
           <button
             type="button"
             onClick={onLogout}
@@ -184,7 +203,7 @@ export function AppShell({
       <div
         className={cn(
           'flex min-h-screen flex-1 flex-col pb-20 lg:pb-0',
-          sidebarOpen ? 'lg:pl-56' : 'lg:pl-16'
+          sidebarOpen ? 'lg:pl-[20rem]' : 'lg:pl-28'
         )}
       >
         {/* Mobile header with user */}
