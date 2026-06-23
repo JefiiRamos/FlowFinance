@@ -301,47 +301,99 @@ export default function DashboardPage() {
       assistantOverlayOpen={assistantOpen || assistantShellMounted}
       onAssistantSidebarClick={toggleAssistant}
     >
-      <div className="fixed inset-0 -z-10 bg-[#0c0a14]" />
+      <div className="fixed inset-0 -z-10 bg-[#0b1120]" />
 
-      <div className="flex flex-col gap-3 p-3 md:p-4">
-        <SummaryCards
-          balance={balance}
-          monthlyIncome={monthlyIncome}
-          monthlyExpenses={monthlyExpenses}
-          monthlySavings={monthlySavings}
-          savingsPercent={savingsPercent}
-          projectedBalance={projectedBalance}
-        />
+      <div className="mx-auto w-full max-w-[1700px] space-y-6 p-6">
+
+        <div className="sticky top-0 z-20 flex items-center justify-between rounded-2xl border border-white/5 bg-[#111827]/80 px-6 py-4 backdrop-blur-xl">
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              Dashboard
+            </h1>
+
+            <p className="text-sm text-zinc-400">
+              Visão geral financeira
+            </p>
+          </div>
+
+          <PeriodFilter
+            value={period}
+            onChange={setPeriod}
+            customRange={customRange}
+            onCustomRangeChange={setCustomRange}
+          />
+        </div>
 
         {section === 'inicio' && (
-          <>
-          <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl">
-            <FinancialIntelligence
-              transactions={transactions}
-              monthlyExpenses={monthlyExpenses}
-              monthlyIncome={monthlyIncome}
+          <div className="space-y-4">
+
+            {/* KPI CARDS */}
+            <SummaryCards
               balance={balance}
+              monthlyIncome={monthlyIncome}
+              monthlyExpenses={monthlyExpenses}
+              monthlySavings={monthlySavings}
+              savingsPercent={savingsPercent}
               projectedBalance={projectedBalance}
             />
-          </div>
-          <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Ultimas transacoes</h3>
-              <button
-                type="button"
-                onClick={() => setSection('transacoes')}
-                className="text-xs font-medium text-violet-400 hover:text-violet-300"
-              >
-                Ver todas
-              </button>
+
+            {/* GRID PRINCIPAL */}
+            <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
+
+              {/* LADO ESQUERDO */}
+              <div className="space-y-4">
+
+                <div className="rounded-3xl border border-white/10 bg-card p-6">
+                  <IncomeVsSpendingChart summary={summary} />
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-3xl border border-white/10 bg-card p-6">
+                    <ExpensesPieChart transactions={transactions} />
+                  </div>
+
+                  <div className="rounded-3xl border border-white/10 bg-card p-6">
+                    <AccumulatedChart summary={summary} />
+                  </div>
+                </div>
+              </div>
+
+              {/* PAINEL LATERAL */}
+              <div className="space-y-4">
+
+                <div className="rounded-3xl border border-white/10 bg-card p-6">
+                  <FinancialIntelligence
+                    transactions={transactions}
+                    monthlyExpenses={monthlyExpenses}
+                    monthlyIncome={monthlyIncome}
+                    balance={balance}
+                    projectedBalance={projectedBalance}
+                  />
+                </div>
+
+                <div className="rounded-3xl border border-white/10 bg-card p-6">
+                  <h3 className="mb-4 text-sm font-semibold">
+                    Últimas transações
+                  </h3>
+
+                  <TransactionsTable
+                    transactions={[...transactions]
+                      .sort(
+                        (a, b) =>
+                          new Date(b.date).getTime() -
+                          new Date(a.date).getTime()
+                      )
+                      .slice(0, 5)}
+                    onEdit={(t) => setEditingTransaction(t)}
+                    onDelete={removeTransaction}
+                  />
+                </div>
+
+              </div>
+
             </div>
-            <TransactionsTable
-              transactions={[...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8)}
-              onEdit={(t) => setEditingTransaction(t)}
-              onDelete={removeTransaction}
-            />
+
           </div>
-          </>
         )}
 
         {section === 'transacoes' && (
@@ -363,7 +415,7 @@ export default function DashboardPage() {
                 <span className="text-xs text-muted-foreground sm:mr-auto">Filtrar</span>
                 <PeriodFilter value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur-xl">
+              <div className="rounded-3xl border border-white/5 bg-[#111827] p-5">
                 <TransactionsTable transactions={filteredTransactions} onEdit={(t) => setEditingTransaction(t)} onDelete={removeTransaction} />
               </div>
             </div>

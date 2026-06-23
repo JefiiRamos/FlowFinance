@@ -57,7 +57,7 @@ export function FinancialIntelligence({
         <Brain className="size-4 text-cyan-400" />
         Inteligencia financeira
       </h3>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-1">
         {topCategory && (
           <div className="animate-in fade-in slide-in-from-bottom-2 rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4 backdrop-blur-sm duration-300">
             <p className="text-xs text-muted-foreground">Categoria que mais consome</p>
@@ -65,7 +65,7 @@ export function FinancialIntelligence({
             <p className="text-sm text-muted-foreground">{formatCurrency(topCategory.amount)}</p>
           </div>
         )}
-        <div className="animate-in fade-in slide-in-from-bottom-2 rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 backdrop-blur-sm duration-300 delay-75">
+        <div className="animate-in fade-in slide-in-from-bottom-2 w-full rounded-xl border border-violet-500/20 bg-violet-500/5 p-4 backdrop-blur-sm duration-300 delay-75">
           <p className="text-xs text-muted-foreground">Media de gastos mensal</p>
           <p className="mt-1 font-semibold text-violet-400">{formatCurrency(avgMonthly)}</p>
         </div>

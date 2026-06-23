@@ -190,7 +190,7 @@ export function AssistantChatPanel({
     <div
       className={cn(
         'flex shrink-0 items-center gap-3 border-white/10 px-3 py-3 backdrop-blur-xl',
-        isOverlay ? 'rounded-t-2xl border-b bg-black/50' : 'border-b bg-black/35 md:px-4'
+        isOverlay ? 'rounded-t-2xl border-b bg-card' : 'border-b bg-card'
       )}
     >
       {showBackLink && !isOverlay && (
@@ -242,7 +242,7 @@ export function AssistantChatPanel({
   )
 
   const scrollClass = isOverlay
-    ? 'h-[min(280px,38vh)] shrink-0 rounded-xl border border-white/10 bg-black/30 shadow-inner backdrop-blur-xl'
+    ? 'h-[calc(100vh-280px)] flex-1 rounded-xl border border-border bg-background'
     : 'h-[min(52vh,420px)] shrink-0 rounded-xl border border-white/10 bg-black/20 shadow-inner backdrop-blur-xl sm:h-[min(56vh,480px)]'
 
   const body = (
@@ -272,8 +272,8 @@ export function AssistantChatPanel({
                   className={cn(
                     'inline-block rounded-2xl px-3 py-2 text-[13px] leading-relaxed shadow-sm sm:px-3.5 sm:py-2.5 sm:text-sm',
                     m.role === 'user'
-                      ? 'rounded-tr-md bg-gradient-to-br from-cyan-600/35 to-cyan-900/25 text-foreground ring-1 ring-cyan-500/20'
-                      : 'rounded-tl-md bg-white/5 text-foreground ring-1 ring-white/10'
+                      ? 'rounded-tr-md bg-primary text-primary-foreground text-foreground ring-1 ring-cyan-500/20'
+                      : 'rounded-tl-md bg-muted text-foreground'
                   )}
                 >
                   {m.body}
@@ -304,7 +304,7 @@ export function AssistantChatPanel({
         </div>
       </div>
 
-      <div className="mt-2 rounded-xl border border-white/10 bg-black/30 p-2.5 shadow-lg backdrop-blur-xl sm:mt-3 sm:p-3">
+      <div className="mt-3 rounded-lg border border-border bg-card p-3 sm:mt-3 sm:p-3">
         <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -342,7 +342,7 @@ export function AssistantChatPanel({
         style={overlayShellStyle}
         onTransitionEnd={motion ? onOverlayShellTransitionEnd : undefined}
         className={cn(
-          'flex max-h-[min(85vh,620px)] w-[min(100vw-1.5rem,400px)] flex-col overflow-hidden border border-white/15 bg-black/55 shadow-2xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-2xl',
+          'flex h-[85vh] w-[480px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg',
           motion ? 'rounded-none' : 'rounded-2xl'
         )}
       >

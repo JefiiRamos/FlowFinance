@@ -1,7 +1,13 @@
 'use client'
 
 import { formatCurrency } from '@/lib/finance'
-import { TrendingUp, TrendingDown, PiggyBank, Percent, TrendingUpDown } from 'lucide-react'
+import {
+  TrendingUp,
+  TrendingDown,
+  PiggyBank,
+  Percent,
+  TrendingUpDown,
+} from 'lucide-react'
 
 interface SummaryCardsProps {
   balance: number
@@ -20,35 +26,88 @@ export function SummaryCards({
   savingsPercent,
   projectedBalance,
 }: SummaryCardsProps) {
-  const cards: { label: string; value: string | number; icon: typeof PiggyBank; color: string; bg: string; glow: string }[] = [
-    { label: 'Saldo total', value: balance, icon: PiggyBank, color: 'text-foreground', bg: 'from-violet-500/20 via-fuchsia-500/10 to-cyan-500/20', glow: 'shadow-[0_0_20px_rgba(139,92,246,0.15)]' },
-    { label: 'Receitas do mes', value: monthlyIncome, icon: TrendingUp, color: 'text-emerald-400', bg: 'from-emerald-500/20 to-emerald-500/5', glow: '' },
-    { label: 'Gastos do mes', value: monthlyExpenses, icon: TrendingDown, color: 'text-red-400', bg: 'from-red-500/20 to-red-500/5', glow: '' },
-    { label: 'Economia', value: `${Math.abs(savingsPercent).toFixed(1)}%`, icon: Percent, color: savingsPercent >= 0 ? 'text-emerald-400' : 'text-red-400', bg: savingsPercent >= 0 ? 'from-emerald-500/20 to-emerald-500/5' : 'from-red-500/20 to-red-500/5', glow: '' },
+  const cards = [
+    {
+      label: 'Saldo Total',
+      value: balance,
+      icon: PiggyBank,
+      accent: 'bg-violet-500/15 text-violet-400',
+    },
+    {
+      label: 'Receitas',
+      value: monthlyIncome,
+      icon: TrendingUp,
+      accent: 'bg-emerald-500/15 text-emerald-400',
+    },
+    {
+      label: 'Despesas',
+      value: monthlyExpenses,
+      icon: TrendingDown,
+      accent: 'bg-red-500/15 text-red-400',
+    },
+    {
+      label: 'Economia',
+      value: `${Math.abs(savingsPercent).toFixed(1)}%`,
+      icon: Percent,
+      accent:
+        savingsPercent >= 0
+          ? 'bg-emerald-500/15 text-emerald-400'
+          : 'bg-red-500/15 text-red-400',
+    },
   ]
+
   if (projectedBalance !== undefined) {
-    cards.push({ label: 'Projecao fim do mes', value: projectedBalance, icon: TrendingUpDown, color: projectedBalance >= 0 ? 'text-cyan-400' : 'text-amber-400', bg: 'from-cyan-500/20 to-violet-500/20', glow: '' })
+    cards.push({
+      label: 'Projeção',
+      value: projectedBalance,
+      icon: TrendingUpDown,
+      accent: 'bg-cyan-500/15 text-cyan-400',
+    })
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      {cards.map((card, i) => {
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      {cards.map((card) => {
         const Icon = card.icon
+
         const isPercent = card.label === 'Economia'
+
         return (
           <div
             key={card.label}
-            className={`animate-in fade-in slide-in-from-bottom-2 rounded-2xl border border-white/10 bg-gradient-to-br ${card.bg} p-4 backdrop-blur-xl transition-all duration-300 hover:scale-[1.02] hover:border-white/20 ${card.glow}`}
-            style={{ animationDelay: `${i * 50}ms` } as React.CSSProperties}
+            className="
+              group
+              rounded-3xl
+              border
+              border-white/5
+              bg-[#111827]
+              p-5
+              transition-all
+              duration-300
+              hover:border-violet-500/20
+              hover:bg-[#151d2b]
+            "
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">{card.label}</p>
-                <p className={`mt-1 text-xl font-bold ${card.color}`}>
-                  {isPercent ? card.value : formatCurrency(card.value as number)}
+                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  {card.label}
                 </p>
+
+                <h3 className="mt-3 text-3xl font-bold text-white">
+                  {isPercent
+                    ? card.value
+                    : formatCurrency(card.value as number)}
+                </h3>
               </div>
-              <div className={`rounded-xl bg-white/10 p-2 ${card.color}`}>
+
+              <div
+                className={`
+                  rounded-2xl
+                  p-3
+                  ${card.accent}
+                `}
+              >
                 <Icon className="size-5" />
               </div>
             </div>
