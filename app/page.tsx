@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 const Silk = dynamic(() => import('@/components/silk'), { ssr: false })
 
@@ -67,74 +68,164 @@ export default function LPPage() {
 
         <main className="flex-1 px-6 py-16 md:py-24">
           <div className="mx-auto max-w-6xl">
-            <section className="mb-20 text-center">
-              <h1 className="mb-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
-                Gestão financeira inteligente para renda variável
-              </h1>
-              <p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
-                Projete sua renda, calcule o gasto seguro e planeje seus meses
-                com clareza. Feito para freelancers, consultores e quem tem
-                renda que varia.
-              </p>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  Acessar painel
-                  <ArrowRight className="size-5" />
-                </Button>
-              </Link>
-            </section>
-
-            <section className="mb-20">
-              <h2 className="mb-10 text-center text-2xl font-bold text-foreground">
-                Por que FlowFinance?
-              </h2>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {FEATURES.map(({ icon: Icon, title, desc }) => (
-                  <div
-                    key={title}
-                    className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-white/20 hover:bg-white/10"
-                  >
-                    <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-primary/20">
-                      <Icon className="size-6 text-primary" />
-                    </div>
-                    <h3 className="mb-2 text-lg font-semibold text-foreground">
-                      {title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{desc}</p>
-                  </div>
-                ))}
+            <section className="mb-32 text-center">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm backdrop-blur-sm">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Planejamento financeiro para renda variável
               </div>
-            </section>
 
-            <section className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm md:p-12">
-              <div className="flex flex-col items-center gap-6 text-center md:flex-row md:justify-between md:text-left">
-                <div className="flex items-center gap-4">
-                  <div className="flex size-14 items-center justify-center rounded-xl bg-primary/20">
-                    <PiggyBank className="size-7 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-foreground">
-                      Comece a planejar hoje
-                    </h3>
-                    <p className="text-muted-foreground">
-                      Grátis. Sem cadastro complexo. Adicione suas rendas e veja
-                      a projeção.
-                    </p>
-                  </div>
-                </div>
+              <h1 className="mx-auto max-w-5xl text-5xl font-black tracking-tight md:text-7xl">
+                Nunca mais fique sem saber
+                <span className="block text-primary">
+                  quanto pode gastar.
+                </span>
+              </h1>
+
+              <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+                O FlowFinance analisa sua renda variável, projeta seus próximos
+                meses e calcula um valor seguro para gastar sem comprometer sua
+                reserva financeira.
+              </p>
+
+              <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
                 <Link href="/login">
                   <Button
                     size="lg"
-                    className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="h-12 px-8 text-base"
                   >
-                    Acessar painel
-                    <ArrowRight className="size-5" />
+                    Começar agora
+                    <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-12 border-white/15 bg-white/5 px-8"
+                >
+                  Ver demonstração
+                </Button>
               </div>
+
+              <div className="mt-14 flex flex-wrap justify-center gap-10">
+                <div>
+                  <p className="text-3xl font-bold">12+</p>
+                  <p className="text-sm text-muted-foreground">
+                    meses de projeção
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-3xl font-bold">100%</p>
+                  <p className="text-sm text-muted-foreground">
+                    personalizável
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-3xl font-bold">5 min</p>
+                  <p className="text-sm text-muted-foreground">
+                    para começar
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-16 grid gap-4 md:grid-cols-3">
+                <Card className="border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+                  <div className="mb-4 text-3xl">📉</div>
+
+                  <h3 className="text-lg font-semibold">
+                    Recebe diferente todo mês?
+                  </h3>
+
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Freelancers, autônomos e consultores raramente possuem renda
+                    previsível.
+                  </p>
+                </Card>
+
+                <Card className="border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+                  <div className="mb-4 text-3xl">😰</div>
+
+                  <h3 className="text-lg font-semibold">
+                    Não sabe quanto pode gastar?
+                  </h3>
+
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Evite gastar demais nos meses bons e passar aperto nos meses
+                    ruins.
+                  </p>
+                </Card>
+
+                <Card className="border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+                  <div className="mb-4 text-3xl">💰</div>
+
+                  <h3 className="text-lg font-semibold">
+                    Dificuldade para criar reserva?
+                  </h3>
+
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Descubra exatamente quanto guardar para construir sua segurança
+                    financeira.
+                  </p>
+                </Card>
+              </div>
+
+              <Card className="mt-20 border-white/10 bg-white/5 p-8 backdrop-blur-xl">
+                <div className="mb-6 text-left">
+                  <h3 className="text-xl font-bold">
+                    Exemplo de análise financeira
+                  </h3>
+
+                  <p className="text-sm text-muted-foreground">
+                    Visualização simplificada do painel
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-4">
+                  <Card className="border-white/10 bg-background/40 p-4">
+                    <p className="text-sm text-muted-foreground">
+                      Gasto Seguro
+                    </p>
+
+                    <p className="mt-2 text-2xl font-bold text-success">
+                      R$ 2.315
+                    </p>
+                  </Card>
+
+                  <Card className="border-white/10 bg-background/40 p-4">
+                    <p className="text-sm text-muted-foreground">
+                      Reserva
+                    </p>
+
+                    <p className="mt-2 text-2xl font-bold">
+                      83%
+                    </p>
+                  </Card>
+
+                  <Card className="border-white/10 bg-background/40 p-4">
+                    <p className="text-sm text-muted-foreground">
+                      Próximo mês
+                    </p>
+
+                    <p className="mt-2 text-2xl font-bold">
+                      R$ 4.280
+                    </p>
+                  </Card>
+
+                  <Card className="border-white/10 bg-background/40 p-4">
+                    <p className="text-sm text-muted-foreground">
+                      Média
+                    </p>
+
+                    <p className="mt-2 text-2xl font-bold">
+                      R$ 3.950
+                    </p>
+                  </Card>
+                </div>
+
+                {/* <div className="mt-6 h-48 rounded-xl border border-white/10 bg-gradient-to-b from-primary/10 to-transparent" /> */}
+              </Card>
             </section>
           </div>
         </main>
