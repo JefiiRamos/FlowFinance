@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { TrendingUp } from 'lucide-react'
 import { setAuth } from '@/lib/auth'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 const Silk = dynamic(() => import('@/components/silk'), { ssr: false })
 
@@ -20,47 +20,45 @@ function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { toast } = useToast()
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+  
     try {
       if (!email.trim() || !password) {
-        toast({
-          title: 'Preencha email e senha',
-          description: 'Preencha email e senha',
-          variant: 'destructive',
+        toast.error('Preencha email e senha', {
+          description: 'Informe seu email e sua senha.',
         })
         return
       }
+  
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
       })
+  
       const data = await res.json().catch(() => ({}))
+  
       if (!res.ok) {
-        toast({
-          title: 'Erro ao entrar',
-          description: data.error ?? 'Erro ao entrar',
-          variant: 'destructive',
+        toast.error('Falha no login', {
+          description: data.error ?? 'Email ou senha inválidos.',
         })
         return
       }
-      setAuth(data.token)
-      router.push(data.user?.onboardingCompleted ? '/dashboard' : '/onboarding')
-      router.refresh()
-    } catch {
-      toast({
-        title: 'Erro ao entrar',
-        description: 'Erro ao entrar',
-        variant: 'destructive',
+  
+      setAuth(data.token, data.user)
+  
+      toast.success('Login realizado!', {
+        description: `Bem-vindo(a), ${data.user.name}!`,
       })
-    } finally {
-      setLoading(false)
-    }
+    } catch {
+      toast.error('Erro inesperado', { description: 'Não foi possível realizar o login. Tente novamente.' })
+    } finally { setLoading(false) }
   }
-
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
       {/* Background - Silk animation */}
