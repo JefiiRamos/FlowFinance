@@ -20,6 +20,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getUser } from '@/lib/auth'
 
 export type NavSection =
   | 'inicio'
@@ -179,7 +180,7 @@ export function AppShell({
 
             <div>
               <p className="text-sm font-medium text-white">
-                Jeferson
+                {getUser()?.name ?? "Usuário"}
               </p>
 
               <p className="text-xs text-slate-400">

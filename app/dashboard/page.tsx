@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type TransitionEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus } from 'lucide-react'
-import { clearAuth, getToken } from '@/lib/auth'
+import { clearAuth, getToken, getUser } from '@/lib/auth'
 import { isAuthenticated } from '@/lib/auth'
 import { TransactionsForm } from '@/components/transactions-form'
 import {
@@ -103,7 +103,7 @@ export default function DashboardPage() {
   const [assistantShellOpen, setAssistantShellOpen] = useState(false)
   const assistantOpenRef = useRef(assistantOpen)
   const assistantExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
+  const user = getUser()
   assistantOpenRef.current = assistantOpen
 
   const toggleAssistant = useCallback(() => {
@@ -306,13 +306,18 @@ export default function DashboardPage() {
       <div className="mx-auto w-full max-w-[1700px] space-y-6 p-6">
 
         <div className="sticky top-0 z-20 flex items-center justify-between rounded-2xl border border-white/5 bg-[#111827]/80 px-6 py-4 backdrop-blur-xl">
+          {/* HEADER DAS SEÇÕES */}
           <div>
-            <h1 className="text-2xl font-bold text-white">
-              Dashboard
-            </h1>
+          <h1 className="text-2xl font-bold text-white">
+            Seja bem vindo(a),{" "}
+            <span className="text-primary">
+              {getUser()?.name ?? "Usuário"}
+            </span>
+            !
+          </h1>
 
             <p className="text-sm text-zinc-400">
-              Visão geral financeira
+              Aqui você pode gerenciar suas finanças de forma simples e eficiente.
             </p>
           </div>
 

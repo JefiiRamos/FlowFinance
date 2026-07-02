@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { TrendingUp } from 'lucide-react'
 import { setAuth } from '@/lib/auth'
+import { useToast } from '@/hooks/use-toast'
 
 const Silk = dynamic(() => import('@/components/silk'), { ssr: false })
 
@@ -18,16 +19,18 @@ function LoginForm() {
   const fromCadastro = searchParams.get('cadastro') === 'ok'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
+  const { toast } = useToast()
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
     setLoading(true)
     try {
       if (!email.trim() || !password) {
-        setError('Preencha email e senha')
+        toast({
+          title: 'Preencha email e senha',
+          description: 'Preencha email e senha',
+          variant: 'destructive',
+        })
         return
       }
       const res = await fetch('/api/auth/login', {
@@ -37,14 +40,22 @@ function LoginForm() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error ?? 'Erro ao entrar')
+        toast({
+          title: 'Erro ao entrar',
+          description: data.error ?? 'Erro ao entrar',
+          variant: 'destructive',
+        })
         return
       }
       setAuth(data.token)
       router.push(data.user?.onboardingCompleted ? '/dashboard' : '/onboarding')
       router.refresh()
     } catch {
-      setError('Erro ao entrar')
+      toast({
+        title: 'Erro ao entrar',
+        description: 'Erro ao entrar',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
@@ -103,9 +114,6 @@ function LoginForm() {
                 autoComplete="current-password"
               />
             </div>
-            {error && (
-              <p className="text-center text-sm text-red-400">{error}</p>
-            )}
             <Button
               type="submit"
               className="w-full"
