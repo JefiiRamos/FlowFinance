@@ -104,6 +104,20 @@ export default function DashboardPage() {
   const assistantOpenRef = useRef(assistantOpen)
   const assistantExitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const user = getUser()
+  const currentDateLabel = useMemo(
+    () => new Intl.DateTimeFormat('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+    }).format(new Date()),
+    []
+  )
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Bom dia'
+    if (hour < 18) return 'Boa tarde'
+    return 'Boa noite'
+  }, [])
   assistantOpenRef.current = assistantOpen
 
   const toggleAssistant = useCallback(() => {
@@ -275,8 +289,8 @@ export default function DashboardPage() {
     [transactions]
   )
 
-  // Quando o usuário clica no FAB em outra aba, trocamos para "transacoes"
-  // e abrimos o modal assim que o formulário estiver montado.
+  // Quando o usuÃ¡rio clica no FAB em outra aba, trocamos para "transacoes"
+  // e abrimos o modal assim que o formulÃ¡rio estiver montado.
   useEffect(() => {
     if (section === 'transacoes' && pendingOpenAdd && openAddRef.current) {
       openAddRef.current.open()
@@ -301,23 +315,22 @@ export default function DashboardPage() {
       assistantOverlayOpen={assistantOpen || assistantShellMounted}
       onAssistantSidebarClick={toggleAssistant}
     >
-      <div className="fixed inset-0 -z-10 bg-[#0b1120]" />
+      <div className="fixed inset-0 -z-10 bg-[#090B10]" />
 
-      <div className="mx-auto w-full max-w-[1700px] space-y-6 p-6">
+      <div className="mx-auto w-full max-w-[1700px] space-y-8 p-5 sm:p-6 lg:p-8">
 
-        <div className="sticky top-0 z-20 flex items-center justify-between rounded-2xl border border-white/5 bg-[#111827]/80 px-6 py-4 backdrop-blur-xl">
-          {/* HEADER DAS SEÇÕES */}
-          <div>
-          <h1 className="text-2xl font-bold text-white">
-            Seja bem vindo(a),{" "}
-            <span className="text-primary">
-              {getUser()?.name ?? "Usuário"}
-            </span>
-            !
-          </h1>
+        <div className="sticky top-0 z-20 flex flex-col gap-5 rounded-2xl border border-white/5 bg-[#0F131C]/85 px-5 py-5 shadow-lg shadow-black/20 backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between lg:px-6">
+          {/* HEADER DAS SEÃ‡Ã•ES */}
+          <div className="min-w-0">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">
+              {currentDateLabel}
+            </p>
+            <h1 className="text-4xl font-semibold tracking-normal text-white">
+              {greeting}, {user?.name ?? 'Usuario'}
+            </h1>
 
-            <p className="text-sm text-zinc-400">
-              Aqui você pode gerenciar suas finanças de forma simples e eficiente.
+            <p className="mt-2 text-sm font-medium text-[#A1A7B3]">
+              Gerencie sua vida financeira com simplicidade.
             </p>
           </div>
 
@@ -330,7 +343,7 @@ export default function DashboardPage() {
         </div>
 
         {section === 'inicio' && (
-          <div className="space-y-4">
+          <div className="space-y-8">
 
             {/* KPI CARDS */}
             <SummaryCards
@@ -343,30 +356,30 @@ export default function DashboardPage() {
             />
 
             {/* GRID PRINCIPAL */}
-            <div className="grid gap-4 xl:grid-cols-[1fr_320px]">
+            <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
 
               {/* LADO ESQUERDO */}
-              <div className="space-y-4">
+              <div className="space-y-5">
 
-                <div className="rounded-3xl border border-white/10 bg-card p-6">
+                <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
                   <IncomeVsSpendingChart summary={summary} />
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-3xl border border-white/10 bg-card p-6">
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
                     <ExpensesPieChart transactions={transactions} />
                   </div>
 
-                  <div className="rounded-3xl border border-white/10 bg-card p-6">
+                  <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
                     <AccumulatedChart summary={summary} />
                   </div>
                 </div>
               </div>
 
               {/* PAINEL LATERAL */}
-              <div className="space-y-4">
+              <div className="space-y-5">
 
-                <div className="rounded-3xl border border-white/10 bg-card p-6">
+                <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
                   <FinancialIntelligence
                     transactions={transactions}
                     monthlyExpenses={monthlyExpenses}
@@ -376,9 +389,9 @@ export default function DashboardPage() {
                   />
                 </div>
 
-                <div className="rounded-3xl border border-white/10 bg-card p-6">
+                {/* <div className="rounded-3xl border border-white/10 bg-card p-6">
                   <h3 className="mb-4 text-sm font-semibold">
-                    Últimas transações
+                    Ãšltimas transaÃ§Ãµes
                   </h3>
 
                   <TransactionsTable
@@ -392,7 +405,7 @@ export default function DashboardPage() {
                     onEdit={(t) => setEditingTransaction(t)}
                     onDelete={removeTransaction}
                   />
-                </div>
+                </div> */}
 
               </div>
 
@@ -402,8 +415,8 @@ export default function DashboardPage() {
         )}
 
         {section === 'transacoes' && (
-          <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[260px_1fr]">
-            <div className="flex shrink-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur-xl lg:sticky lg:top-4 lg:h-fit">
+          <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[300px_1fr]">
+            <div className="flex shrink-0 flex-col overflow-hidden rounded-2xl border border-white/5 bg-[#0F131C]/90 shadow-lg shadow-black/20 backdrop-blur-xl lg:sticky lg:top-28 lg:h-fit">
               <TransactionsForm
                 transactions={transactions}
                 onAdd={addTransaction}
@@ -415,12 +428,12 @@ export default function DashboardPage() {
                 openAddRef={openAddRef}
               />
             </div>
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <span className="text-xs text-muted-foreground sm:mr-auto">Filtrar</span>
+            <div className="min-w-0 flex-1 space-y-5">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280] sm:mr-auto">Filtrar</span>
                 <PeriodFilter value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} />
               </div>
-              <div className="rounded-3xl border border-white/5 bg-[#111827] p-5">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
                 <TransactionsTable transactions={filteredTransactions} onEdit={(t) => setEditingTransaction(t)} onDelete={removeTransaction} />
               </div>
             </div>
@@ -428,25 +441,25 @@ export default function DashboardPage() {
         )}
 
         {section === 'graficos' && (
-          <div className="space-y-3">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+          <div className="space-y-5">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <ExpensesPieChart transactions={transactions} />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <AccumulatedChart summary={summary} />
               </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <IncomeVsSpendingChart summary={summary} />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <IncomeChartCompact summary={summary} />
               </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-xl">
-              <h3 className="mb-2 text-sm font-semibold text-foreground">Comparacao mensal</h3>
+            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Comparacao mensal</h3>
               <CashFlowCards summary={summary} />
             </div>
           </div>
@@ -457,57 +470,57 @@ export default function DashboardPage() {
         )}
 
         {section === 'metas' && (
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
               <GoalsSection balance={balance} />
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 overflow-hidden p-3 backdrop-blur">
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
               <BudgetTable transactions={transactions} />
             </div>
           </div>
         )}
 
         {section === 'despesas-fixas' && (
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
               <RecurringIncomeList />
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4 backdrop-blur">
+            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
               <RecurringExpensesList />
             </div>
           </div>
         )}
 
         {section === 'contas' && (
-          <div className="rounded-xl border border-white/10 bg-black/20 p-6 backdrop-blur">
+          <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-8 shadow-lg shadow-black/20 backdrop-blur-xl">
             <p className="text-center text-muted-foreground">Contas e carteiras em breve.</p>
           </div>
         )}
 
         {section === 'relatorios' && (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-foreground">Analise e exportacao</h3>
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-xl font-semibold text-foreground">Analise e exportacao</h3>
               <ExportReportsButton transactions={transactions} />
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <ExpensesPieChart transactions={transactions} />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <AccumulatedChart summary={summary} />
               </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <IncomeVsSpendingChart summary={summary} />
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-xl">
+              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
                 <IncomeChartCompact summary={summary} />
               </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 backdrop-blur-xl">
-              <h3 className="mb-2 text-sm font-semibold text-foreground">Comparacao mensal</h3>
+            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Comparacao mensal</h3>
               <CashFlowCards summary={summary} />
             </div>
           </div>
@@ -525,7 +538,7 @@ export default function DashboardPage() {
             openAddRef.current?.open()
           }
         }}
-        className="fixed bottom-24 right-4 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-all hover:scale-110 hover:shadow-2xl active:scale-95 lg:bottom-6 lg:h-16 lg:w-16"
+        className="fixed bottom-28 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-[#7E8BFF] active:scale-95 lg:bottom-8 lg:right-8 lg:h-14 lg:w-14"
         aria-label="Nova Transacao"
       >
         <Plus className="size-8" />

@@ -1,13 +1,6 @@
 'use client'
 
 import { formatCurrency } from '@/lib/finance'
-import {
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
-  Percent,
-  TrendingUpDown,
-} from 'lucide-react'
 
 interface SummaryCardsProps {
   balance: number
@@ -28,92 +21,53 @@ export function SummaryCards({
 }: SummaryCardsProps) {
   const cards = [
     {
-      label: 'Saldo Total',
-      value: balance,
-      icon: PiggyBank,
-      accent: 'bg-violet-500/15 text-violet-400',
+      label: 'Saldo',
+      value: formatCurrency(balance),
+      secondary: projectedBalance !== undefined ? `Projecao ${formatCurrency(projectedBalance)}` : 'Posicao atual',
+      accent: 'bg-primary',
     },
     {
       label: 'Receitas',
-      value: monthlyIncome,
-      icon: TrendingUp,
-      accent: 'bg-emerald-500/15 text-emerald-400',
+      value: formatCurrency(monthlyIncome),
+      secondary: 'Entradas no periodo',
+      accent: 'bg-[#22C55E]',
     },
     {
       label: 'Despesas',
-      value: monthlyExpenses,
-      icon: TrendingDown,
-      accent: 'bg-red-500/15 text-red-400',
+      value: formatCurrency(monthlyExpenses),
+      secondary: 'Saidas no periodo',
+      accent: 'bg-[#EF4444]',
     },
     {
       label: 'Economia',
-      value: `${Math.abs(savingsPercent).toFixed(1)}%`,
-      icon: Percent,
-      accent:
-        savingsPercent >= 0
-          ? 'bg-emerald-500/15 text-emerald-400'
-          : 'bg-red-500/15 text-red-400',
+      value: formatCurrency(monthlySavings),
+      secondary: `${Math.abs(savingsPercent).toFixed(1)}% ${savingsPercent >= 0 ? 'guardado' : 'acima'}`,
+      accent: savingsPercent >= 0 ? 'bg-[#22C55E]' : 'bg-[#F59E0B]',
     },
   ]
 
-  if (projectedBalance !== undefined) {
-    cards.push({
-      label: 'Projeção',
-      value: projectedBalance,
-      icon: TrendingUpDown,
-      accent: 'bg-cyan-500/15 text-cyan-400',
-    })
-  }
-
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      {cards.map((card) => {
-        const Icon = card.icon
+    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      {cards.map((card) => (
+        <div
+          key={card.label}
+          className="group relative overflow-hidden rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]"
+        >
+          <div className={`absolute left-0 top-5 h-10 w-0.5 rounded-r-full ${card.accent}`} />
 
-        const isPercent = card.label === 'Economia'
-
-        return (
-          <div
-            key={card.label}
-            className="
-              group
-              rounded-3xl
-              border
-              border-white/5
-              bg-[#111827]
-              p-5
-              transition-all
-              duration-300
-              hover:border-violet-500/20
-              hover:bg-[#151d2b]
-            "
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-                  {card.label}
-                </p>
-
-                <h3 className="mt-3 text-3xl font-bold text-white">
-                  {isPercent
-                    ? card.value
-                    : formatCurrency(card.value as number)}
-                </h3>
-              </div>
-
-              <div
-                className={`
-                  rounded-2xl
-                  p-3
-                  ${card.accent}
-                `}
-              >
-                <Icon className="size-5" />
-              </div>
-            </div>
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">
+              {card.label}
+            </p>
+            <p className="truncate text-[clamp(1.8rem,2vw,2.4rem)] font-semibold tracking-normal text-white">
+              {card.value}
+            </p>
+            <p className="truncate text-sm font-medium text-[#A1A7B3]">
+              {card.secondary}
+            </p>
           </div>
-        )
-      })}
+        </div>
+      ))}
     </div>
   )
 }

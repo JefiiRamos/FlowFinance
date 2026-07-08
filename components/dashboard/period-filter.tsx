@@ -54,13 +54,13 @@ export function PeriodFilter({ value, onChange, customRange, onCustomRangeChange
   const range = getDateRange()
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/5 bg-white/[0.03] p-1.5 shadow-sm shadow-black/20 backdrop-blur-xl">
       {PERIODS.filter((p) => p.id !== 'custom').map((p) => (
         <Button
           key={p.id}
-          variant={value === p.id ? 'default' : 'outline'}
+          variant={value === p.id ? 'default' : 'ghost'}
           size="sm"
-          className="h-8"
+          className="h-8 px-3"
           onClick={() => onChange(p.id)}
         >
           {p.label}
@@ -69,9 +69,9 @@ export function PeriodFilter({ value, onChange, customRange, onCustomRangeChange
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant={value === 'custom' ? 'default' : 'outline'}
+            variant={value === 'custom' ? 'default' : 'ghost'}
             size="sm"
-            className="h-8 gap-1"
+            className="h-8 gap-1 px-3"
           >
             <CalendarIcon className="size-3.5" />
             Personalizado
