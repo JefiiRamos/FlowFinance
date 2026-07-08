@@ -55,6 +55,8 @@ function LoginForm() {
       toast.success('Login realizado!', {
         description: `Bem-vindo(a), ${data.user.name}!`,
       })
+      
+      router.replace('/dashboard')
     } catch {
       toast.error('Erro inesperado', { description: 'Não foi possível realizar o login. Tente novamente.' })
     } finally { setLoading(false) }
