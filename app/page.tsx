@@ -1,5 +1,6 @@
 'use client'
 
+import { Solution } from '@/components/landing/solution'
 import { Problem } from '@/components/landing/problem'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
@@ -105,6 +106,8 @@ export default function LPPage() {
           <Hero />
 
           <Problem />
+
+          <Solution />
 
           {/*
           =========================================================================
