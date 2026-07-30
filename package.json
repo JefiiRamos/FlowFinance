@@ -11,6 +11,10 @@
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint .",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:setup": "prisma db push && prisma db seed",
+    "db:studio": "prisma studio",
     "reset-user-finances": "npx tsx scripts/reset-user-finances.ts"
   },
   "dependencies": {

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { TrendingUp } from 'lucide-react'
 import { setAuth } from '@/lib/auth'
+import { DEMO_ACCOUNT } from '@/lib/demo-account'
 import { toast } from 'sonner'
 
 const Silk = dynamic(() => import('@/components/silk'), { ssr: false })
@@ -88,6 +89,12 @@ function LoginForm() {
           <p className="mb-6 text-center text-sm text-muted-foreground">
             {fromCadastro ? 'Cadastro feito! Entre com seu email e senha.' : 'Acesse seu painel financeiro'}
           </p>
+
+          {process.env.NEXT_PUBLIC_SHOW_DEMO_LOGIN === 'true' && (
+            <p className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-center text-xs text-foreground">
+              Demo: {DEMO_ACCOUNT.email} / {DEMO_ACCOUNT.password}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">

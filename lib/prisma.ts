@@ -1,15 +1,12 @@
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
+import { resolveDatabaseUrl } from './database-url'
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefined }
 
 function getPrisma(): PrismaClient {
   if (globalForPrisma.prisma) return globalForPrisma.prisma
-  const connectionString = process.env.DATABASE_URL
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is not defined')
-  }
-  const adapter = new PrismaPg({ connectionString })
+  const adapter = new PrismaPg({ connectionString: resolveDatabaseUrl() })
   const client = new PrismaClient({ adapter })
   globalForPrisma.prisma = client
   return client

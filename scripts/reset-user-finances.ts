@@ -8,25 +8,13 @@
  *   npx tsx scripts/reset-user-finances.ts outro@email.com
  */
 import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import pg from 'pg'
+import { createPrismaClient } from '../lib/create-prisma-client'
 
 const DEFAULT_EMAIL = 'jefao@gmail.com'
 
-function createPrisma() {
-  const url = process.env.DATABASE_URL
-  if (!url) {
-    console.error('Defina DATABASE_URL (ex.: carregue o .env na raiz).')
-    process.exit(1)
-  }
-  const pool = new pg.Pool({ connectionString: url })
-  return new PrismaClient({ adapter: new PrismaPg(pool) })
-}
-
 async function main() {
   const emailArg = (process.argv[2] ?? DEFAULT_EMAIL).trim()
-  const prisma = createPrisma()
+  const prisma = createPrismaClient()
 
   try {
     const user = await prisma.user.findFirst({

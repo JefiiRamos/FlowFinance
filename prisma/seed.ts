@@ -1,6 +1,9 @@
-import { PrismaClient } from '@prisma/client'
+import 'dotenv/config'
+import { hash } from 'bcryptjs'
+import { DEMO_ACCOUNT } from '../lib/demo-account'
+import { createPrismaClient } from '../lib/create-prisma-client'
 
-const prisma = new PrismaClient()
+const prisma = createPrismaClient()
 
 async function main() {
   const categories = [
@@ -41,7 +44,131 @@ async function main() {
     })
   }
 
+  const passwordHash = await hash(DEMO_ACCOUNT.password, 10)
+  const demoUser = await prisma.user.upsert({
+    where: { email: DEMO_ACCOUNT.email },
+    create: {
+      email: DEMO_ACCOUNT.email,
+      passwordHash,
+      name: DEMO_ACCOUNT.name,
+      onboardingCompleted: true,
+      onboardingCompletedAt: new Date(),
+      monthlyIncomeTarget: 5200,
+      payDay: 5,
+      financialProfile: 'equilibrado',
+      primaryGoal: 'reserva_emergencia',
+    },
+    update: {
+      passwordHash,
+      name: DEMO_ACCOUNT.name,
+      onboardingCompleted: true,
+    },
+  })
+
+  await prisma.transaction.deleteMany({ where: { userId: demoUser.id } })
+  await prisma.goal.deleteMany({ where: { userId: demoUser.id } })
+  await prisma.budgetLimit.deleteMany({ where: { userId: demoUser.id } })
+
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  await prisma.transaction.createMany({
+    data: [
+      {
+        userId: demoUser.id,
+        type: 'income',
+        amount: 5200,
+        date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 5),
+        description: 'Salario CLT',
+        category: 'Salario',
+        paymentMethod: 'Transferencia',
+        categoryId: 'cat-salario',
+        paymentMethodId: 'pm-transferencia',
+        source: 'manual',
+      },
+      {
+        userId: demoUser.id,
+        type: 'income',
+        amount: 800,
+        date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 18),
+        description: 'Freelance design',
+        category: 'Freelance',
+        paymentMethod: 'PIX',
+        categoryId: 'cat-freelance',
+        paymentMethodId: 'pm-pix',
+        source: 'manual',
+      },
+      {
+        userId: demoUser.id,
+        type: 'expense',
+        amount: 1450,
+        date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 8),
+        description: 'Aluguel',
+        category: 'Moradia',
+        paymentMethod: 'PIX',
+        categoryId: 'cat-moradia',
+        paymentMethodId: 'pm-pix',
+        source: 'manual',
+      },
+      {
+        userId: demoUser.id,
+        type: 'expense',
+        amount: 420,
+        date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 12),
+        description: 'Supermercado',
+        category: 'Alimentacao',
+        paymentMethod: 'Cartao de Debito',
+        categoryId: 'cat-alimentacao',
+        paymentMethodId: 'pm-cd',
+        source: 'manual',
+      },
+      {
+        userId: demoUser.id,
+        type: 'expense',
+        amount: 189,
+        date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 15),
+        description: 'Uber / transporte',
+        category: 'Transporte',
+        paymentMethod: 'Cartao de Credito',
+        categoryId: 'cat-transporte',
+        paymentMethodId: 'pm-cc',
+        source: 'manual',
+      },
+      {
+        userId: demoUser.id,
+        type: 'expense',
+        amount: 95,
+        date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 20),
+        description: 'Cinema e lazer',
+        category: 'Lazer',
+        paymentMethod: 'Cartao de Credito',
+        categoryId: 'cat-lazer',
+        paymentMethodId: 'pm-cc',
+        source: 'manual',
+      },
+    ],
+  })
+
+  await prisma.goal.create({
+    data: {
+      userId: demoUser.id,
+      name: 'Reserva de emergencia',
+      targetAmount: 10000,
+      currentAmount: 3200,
+      deadline: new Date(now.getFullYear(), 11, 31),
+    },
+  })
+
+  await prisma.budgetLimit.createMany({
+    data: [
+      { userId: demoUser.id, category: 'Alimentacao', limit: 600 },
+      { userId: demoUser.id, category: 'Transporte', limit: 350 },
+      { userId: demoUser.id, category: 'Lazer', limit: 300 },
+    ],
+  })
+
   console.log('Seed concluido')
+  console.log(`Conta demo: ${DEMO_ACCOUNT.email} / ${DEMO_ACCOUNT.password}`)
 }
 
 main()

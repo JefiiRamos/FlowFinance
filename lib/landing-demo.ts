@@ -1,3 +1,5 @@
+import { FinancialSummary } from "./finance";
+
 export const landingSummary = {
   monthlyProjections: [
     {
