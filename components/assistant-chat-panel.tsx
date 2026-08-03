@@ -22,7 +22,7 @@ const WELCOME_MESSAGES: ChatLine[] = [
   {
     id: 'welcome',
     role: 'assistant',
-    body: 'Olá! Descreva em uma frase o que gastou ou recebeu. Entendo atalhos como “42 uber”, “mercado 180 ontem” ou “salário 4500”. Quando der para identificar valor e tipo, registro no seu dashboard.',
+    body: 'Olá! Descreva em uma frase o que gastou ou recebeu. Entendo atalhos como “42 uber”, “mercado 180 ontem” ou “salário 4500”. Quando identificar valor e tipo, registro no seu dashboard.',
   },
 ]
 
@@ -146,10 +146,7 @@ export function AssistantChatPanel({
       }
 
       if (!res.ok) {
-        const errMsg =
-          data.error === 'OPENAI_API_KEY nao configurada'
-            ? 'A chave da OpenAI não está configurada no servidor (OPENAI_API_KEY).'
-            : data.error ?? 'Não foi possível obter resposta agora. Tente de novo em instantes.'
+        const errMsg = data.error ?? 'Não foi possível obter resposta agora. Tente de novo em instantes.'
         setMessages((prev) => [
           ...prev,
           { id: newId(), role: 'assistant', body: errMsg, meta: res.status === 401 ? 'Sessão' : 'Erro' },
@@ -157,7 +154,7 @@ export function AssistantChatPanel({
         return
       }
 
-      const reply = typeof data.reply === 'string' ? data.reply : 'Sem resposta da IA.'
+      const reply = typeof data.reply === 'string' ? data.reply : 'Sem resposta do assistente.'
       setMessages((prev) => [
         ...prev,
         {
@@ -207,7 +204,7 @@ export function AssistantChatPanel({
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold text-foreground">Assistente de gastos</h2>
           <p className="truncate text-[11px] text-muted-foreground sm:text-xs">
-            {isOverlay ? 'OpenAI + suas transações' : 'OpenAI — registra gastos e receitas no dashboard'}
+            {isOverlay ? 'Bot automático + suas transações' : 'Registra gastos e receitas no dashboard'}
           </p>
         </div>
       </div>
@@ -226,7 +223,7 @@ export function AssistantChatPanel({
       {!isOverlay && (
         <span className="hidden shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:inline-flex">
           <Sparkles className="size-3 text-fuchsia-400" />
-          IA ativa
+          Bot ativo
         </span>
       )}
     </div>
@@ -235,7 +232,7 @@ export function AssistantChatPanel({
   const notice = !isOverlay && (
     <div className="mb-3 shrink-0 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 backdrop-blur-xl">
       <p className="text-xs leading-relaxed text-muted-foreground">
-        O assistente usa a API da OpenAI e pode registrar despesas e receitas na sua conta. Seja explícito com valores e datas
+        O assistente interpreta frases curtas e registra despesas e receitas na sua conta. Seja explícito com valores e datas
         quando quiser que algo entre no extrato.
       </p>
     </div>
@@ -321,7 +318,7 @@ export function AssistantChatPanel({
         />
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 sm:mt-2">
           <span className="text-[10px] text-muted-foreground sm:text-[11px]">
-            {isSending ? 'Aguardando a IA…' : 'Enter envia · Shift+Enter nova linha'}
+            {isSending ? 'Processando…' : 'Enter envia · Shift+Enter nova linha'}
           </span>
           <Button type="button" size="sm" className="gap-1.5 rounded-lg" onClick={() => void send()} disabled={isSending}>
             {isSending ? <Loader2 className="size-4 animate-spin" /> : <SendHorizonal className="size-4" />}
