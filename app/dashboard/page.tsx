@@ -391,7 +391,7 @@ export default function DashboardPage() {
 
                 {/* <div className="rounded-3xl border border-white/10 bg-card p-6">
                   <h3 className="mb-4 text-sm font-semibold">
-                    Ãšltimas transaÃ§Ãµes
+                    Últimas transações
                   </h3>
 
                   <TransactionsTable

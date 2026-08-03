@@ -80,14 +80,14 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
     if (isSaving) return
 
     if (!description.trim()) {
-      toast.error('Preencha a descriÃ§Ã£o')
+      toast.error('Preencha a descrição')
       return
     }
 
     const parsedAmount = parseFloat(amount)
 
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      toast.error('Informe um valor vÃ¡lido')
+      toast.error('Informe um valor válido')
       return
     }
 
@@ -116,7 +116,7 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
 
       resetForm()
       setIsOpen(false)
-      toast.success(editing ? 'TransaÃ§Ã£o atualizada' : 'TransaÃ§Ã£o adicionada')
+      toast.success(editing ? 'Transação atualizada' : 'Transação adicionada')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Erro ao salvar')
     } finally {
@@ -160,7 +160,7 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
   async function handleDelete(id: string) {
     try {
       await onDelete(id)
-      toast.success('TransaÃ§Ã£o removida')
+      toast.success('Transação removida')
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Erro ao remover')
     }
@@ -179,7 +179,7 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
           <p className="py-4 text-center text-xs font-medium text-muted-foreground">Carregando...</p>
         ) : sorted.length === 0 ? (
           <p className="py-4 text-center text-xs font-medium text-muted-foreground">
-            Nenhuma transaÃ§Ã£o. Adicione quando receber ou gastar.
+            Nenhuma transação. Adicione quando receber ou gastar.
           </p>
         ) : (
           sorted.map((t) => (
@@ -237,7 +237,7 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
           }}
         >
           <Plus className="size-4" />
-          Nova TransaÃ§Ã£o
+          Nova Transação
         </Button>
         <div className="grid grid-cols-2 gap-2">
           <Button
@@ -263,10 +263,10 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editing ? 'Editar transaÃ§Ã£o' : transactionType === 'income' ? 'Nova receita' : 'Novo gasto'}
+                {editing ? 'Editar transação' : transactionType === 'income' ? 'Nova receita' : 'Novo gasto'}
               </DialogTitle>
               <DialogDescription>
-                Preencha os dados da transaÃ§Ã£o.
+                Preencha os dados da transação.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-2">
@@ -294,10 +294,10 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="desc">DescriÃ§Ã£o</Label>
+                <Label htmlFor="desc">Descrição</Label>
                 <Input
                   id="desc"
-                  placeholder="Ex: Supermercado, SalÃ¡rio..."
+                  placeholder="Ex: Supermercado, Salário..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
 
