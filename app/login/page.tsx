@@ -64,7 +64,6 @@ function LoginForm() {
   }
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
-      {/* Background - Silk animation */}
       <div className="fixed inset-0 -z-10">
         <Silk
           speed={4}
