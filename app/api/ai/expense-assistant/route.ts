@@ -111,6 +111,51 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    let planning: {
+      safeSpend: string
+      reserve: string
+      category: string
+      status: string
+    } | null = null
+
+    if (created) {
+      // TODO: se você já tem um modelo de orçamento/meta (ex.: renda mensal fixa,
+      // reserva de emergência), troque este cálculo pela sua regra real.
+      // Por ora: soma receitas e despesas do MÊS ATUAL (incluindo a transação recém-criada)
+      // pra estimar quanto ainda "sobra" com segurança.
+      const [year, month] = today.split('-').map(Number)
+      const monthStart = new Date(year, month - 1, 1)
+      const monthEnd = new Date(year, month, 1)
+
+      const monthTx = await prisma.transaction.findMany({
+        where: {
+          userId,
+          date: { gte: monthStart, lt: monthEnd },
+        },
+        select: { type: true, amount: true },
+      })
+
+      const totalIncome = monthTx
+        .filter((t) => t.type === 'income')
+        .reduce((sum, t) => sum + t.amount, 0)
+      const totalExpense = monthTx
+        .filter((t) => t.type === 'expense')
+        .reduce((sum, t) => sum + t.amount, 0)
+
+      const safeSpend = totalIncome - totalExpense
+      const sign = created.type === 'expense' ? '+' : '+'
+
+      const formatBRL = (value: number) =>
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
+
+      planning = {
+        safeSpend: formatBRL(safeSpend),
+        reserve: `${sign} ${formatBRL(created.amount)}`,
+        category: created.category ?? 'Outros',
+        status: 'Atualizado',
+      }
+    }
+
     return NextResponse.json({
       reply: parsed.reply,
       created: Boolean(created),
@@ -124,6 +169,7 @@ export async function POST(request: NextRequest) {
             description: created.description,
           }
         : null,
+      planning,
     })
   } catch (error) {
     console.error('[POST /api/ai/expense-assistant]', error)

@@ -2,20 +2,32 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type TransitionEvent } from 'react'
 import Link from 'next/link'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Bot, Loader2, SendHorizonal, Sparkles, User, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { getToken } from '@/lib/auth'
+import {
+  AnalyzingCard,
+  ResultCard,
+  type AnalysisData,
+  type PlanningData,
+} from '@/components/landing/assistant/TransactionCards'
 
 type ChatRole = 'user' | 'assistant'
+
+type ChatKind = 'text' | 'analyzing' | 'result'
 
 export interface ChatLine {
   id: string
   role: ChatRole
+  kind?: ChatKind
   body: string
   meta?: string
+  analysis?: AnalysisData
+  result?: PlanningData
 }
 
 const WELCOME_MESSAGES: ChatLine[] = [
@@ -37,6 +49,10 @@ const OVERLAY_SHELL_CLOSE_DELAY_MS = 52
 
 function newId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export type AssistantChatLayout = 'page' | 'overlay'
@@ -73,10 +89,10 @@ export function AssistantChatPanel({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const motion = overlayMotionOpen !== undefined
-  const open = motion ? Boolean(overlayMotionOpen) : true
+  const isControlled = overlayMotionOpen !== undefined
+  const open = isControlled ? Boolean(overlayMotionOpen) : true
 
-  const overlayShellStyle: CSSProperties | undefined = motion
+  const overlayShellStyle: CSSProperties | undefined = isControlled
     ? {
         transformOrigin: 'bottom right',
         willChange: 'transform, opacity, border-radius',
@@ -91,7 +107,7 @@ export function AssistantChatPanel({
       }
     : undefined
 
-  const overlayInnerStyle: CSSProperties | undefined = motion
+  const overlayInnerStyle: CSSProperties | undefined = isControlled
     ? {
         willChange: 'transform, opacity',
         transform: open ? 'translate3d(0, 0, 0)' : 'translate3d(0, 12px, 0)',
@@ -102,32 +118,41 @@ export function AssistantChatPanel({
       }
     : undefined
 
-  const send = useCallback(async () => {
-    const text = draft.trim()
-    if (!text || isSending) return
+    const send = useCallback(async () => {
+      const text = draft.trim()
+      if (!text || isSending) return
+  
+      const token = getToken()
+      if (!token) {
+        setMessages((prev) => [
+          ...prev,
+          { id: newId(), role: 'user', body: text },
+          {
+            id: newId(),
+            role: 'assistant',
+            body: 'Sua sessão expirou ou você não está logado. Entre de novo para usar o assistente.',
+          },
+        ])
+        setDraft('')
+        return
+      }
 
-    const token = getToken()
-    if (!token) {
-      setMessages((prev) => [
-        ...prev,
-        { id: newId(), role: 'user', body: text },
-        {
-          id: newId(),
-          role: 'assistant',
-          body: 'Sua sessão expirou ou você não está logado. Entre de novo para usar o assistente.',
-        },
-      ])
+      const userLine: ChatLine = { id: newId(), role: 'user', body: text }
+      const history = [...messages, userLine]
+  
+      // mostra a mensagem do usuário imediatamente
+      setMessages(history)
       setDraft('')
-      return
-    }
-
-    const userLine: ChatLine = { id: newId(), role: 'user', body: text }
-    const history = [...messages, userLine]
-    setMessages(history)
-    setDraft('')
-    setIsSending(true)
-
-    try {
+      setIsSending(true)
+  
+      // pequena pausa antes de "a IA começar a digitar" — parece mais natural
+      await wait(550)
+  
+      const analyzingId = newId()
+      const analyzingLine: ChatLine = { id: analyzingId, role: 'assistant', kind: 'analyzing', body: '' }
+      setMessages((prev) => [...prev, analyzingLine])
+  
+      try {
       const res = await fetch('/api/ai/expense-assistant', {
         method: 'POST',
         headers: {
@@ -143,41 +168,56 @@ export function AssistantChatPanel({
         error?: string
         reply?: string
         created?: boolean
+        planning?: PlanningData
       }
 
       if (!res.ok) {
         const errMsg = data.error ?? 'Não foi possível obter resposta agora. Tente de novo em instantes.'
-        setMessages((prev) => [
-          ...prev,
-          { id: newId(), role: 'assistant', body: errMsg, meta: res.status === 401 ? 'Sessão' : 'Erro' },
-        ])
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === analyzingId
+              ? { ...m, kind: 'text', body: errMsg, meta: res.status === 401 ? 'Sessão' : 'Erro' }
+              : m
+          )
+        )
         return
       }
 
       const reply = typeof data.reply === 'string' ? data.reply : 'Sem resposta do assistente.'
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: newId(),
-          role: 'assistant',
-          body: reply,
-          meta: data.created ? 'Registrado no dashboard' : undefined,
-        },
-      ])
+
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== analyzingId) return m
+
+          if (data.created && data.planning) {
+            return { ...m, kind: 'result', body: reply, result: data.planning }
+          }
+
+          return {
+            ...m,
+            kind: 'text',
+            body: reply,
+            meta: data.created ? 'Registrado no dashboard' : undefined,
+          }
+        })
+      )
 
       if (data.created) {
         await onTransactionCreated?.()
       }
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: newId(),
-          role: 'assistant',
-          body: 'Falha de rede ao contatar o servidor. Verifique sua conexão e tente novamente.',
-          meta: 'Erro',
-        },
-      ])
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === analyzingId
+            ? {
+                ...m,
+                kind: 'text',
+                body: 'Falha de rede ao contatar o servidor. Verifique sua conexão e tente novamente.',
+                meta: 'Erro',
+              }
+            : m
+        )
+      )
     } finally {
       setIsSending(false)
     }
@@ -247,40 +287,67 @@ export function AssistantChatPanel({
       {notice}
       <ScrollArea className={scrollClass}>
         <div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
-          {messages.map((m) => (
-            <div key={m.id} className={cn('flex gap-2', m.role === 'user' ? 'flex-row-reverse' : 'flex-row sm:gap-2.5')}>
-              <div
-                className={cn(
-                  'flex size-7 shrink-0 items-center justify-center rounded-lg border sm:size-8',
-                  m.role === 'user'
-                    ? 'border-cyan-500/25 bg-cyan-500/15'
-                    : 'border-violet-500/25 bg-violet-500/15'
-                )}
-                aria-hidden
-              >
-                {m.role === 'user' ? (
-                  <User className="size-3.5 text-cyan-300 sm:size-4" />
-                ) : (
-                  <Bot className="size-3.5 text-violet-300 sm:size-4" />
-                )}
-              </div>
-              <div className={cn('max-w-[88%] space-y-0.5 sm:max-w-[85%]', m.role === 'user' ? 'items-end text-right' : 'items-start')}>
-                <div
-                  className={cn(
-                    'inline-block rounded-2xl px-3 py-2 text-[13px] leading-relaxed shadow-sm sm:px-3.5 sm:py-2.5 sm:text-sm',
-                    m.role === 'user'
-                      ? 'rounded-tr-md bg-primary text-primary-foreground text-foreground ring-1 ring-cyan-500/20'
-                      : 'rounded-tl-md bg-muted text-foreground'
-                  )}
+          <AnimatePresence initial={false}>
+            {messages.map((m) => {
+              if (m.kind === 'analyzing') {
+                return (
+                  <div key={m.id} className="flex justify-start">
+                    <AnalyzingCard />
+                  </div>
+                )
+              }
+
+              if (m.kind === 'result') {
+                return (
+                  <div key={m.id} className="flex justify-start">
+                    <ResultCard data={m.result ?? {}} />
+                  </div>
+                )
+              }
+
+              return (
+                <motion.div
+                  key={m.id}
+                  layout
+                  initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  className={cn('flex gap-2', m.role === 'user' ? 'flex-row-reverse' : 'flex-row sm:gap-2.5')}
                 >
-                  {m.body}
-                </div>
-                {m.meta && (
-                  <p className="px-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground/90 sm:text-[10px]">{m.meta}</p>
-                )}
-              </div>
-            </div>
-          ))}
+                  <div
+                    className={cn(
+                      'flex size-7 shrink-0 items-center justify-center rounded-lg border sm:size-8',
+                      m.role === 'user'
+                        ? 'border-cyan-500/25 bg-cyan-500/15'
+                        : 'border-violet-500/25 bg-violet-500/15'
+                    )}
+                    aria-hidden
+                  >
+                    {m.role === 'user' ? (
+                      <User className="size-3.5 text-cyan-300 sm:size-4" />
+                    ) : (
+                      <Bot className="size-3.5 text-violet-300 sm:size-4" />
+                    )}
+                  </div>
+                  <div className={cn('max-w-[88%] space-y-0.5 sm:max-w-[85%]', m.role === 'user' ? 'items-end text-right' : 'items-start')}>
+                    <div
+                      className={cn(
+                        'inline-block rounded-2xl px-3 py-2 text-[13px] leading-relaxed shadow-sm sm:px-3.5 sm:py-2.5 sm:text-sm',
+                        m.role === 'user'
+                          ? 'rounded-tr-md bg-primary text-primary-foreground text-foreground ring-1 ring-cyan-500/20'
+                          : 'rounded-tl-md bg-muted text-foreground'
+                      )}
+                    >
+                      {m.body}
+                    </div>
+                    {m.meta && (
+                      <p className="px-1 text-[9px] font-medium uppercase tracking-wide text-muted-foreground/90 sm:text-[10px]">{m.meta}</p>
+                    )}
+                  </div>
+                </motion.div>
+              )
+            })}
+          </AnimatePresence>
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
@@ -335,12 +402,12 @@ export function AssistantChatPanel({
         role="dialog"
         aria-modal="true"
         aria-label="Assistente de gastos"
-        data-open={motion ? (open ? 'true' : 'false') : 'true'}
+        data-open={isControlled ? (open ? 'true' : 'false') : 'true'}
         style={overlayShellStyle}
-        onTransitionEnd={motion ? onOverlayShellTransitionEnd : undefined}
+        onTransitionEnd={isControlled ? onOverlayShellTransitionEnd : undefined}
         className={cn(
           'flex h-[85vh] w-[480px] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-lg',
-          motion ? 'rounded-none' : 'rounded-2xl'
+          isControlled ? 'rounded-none' : 'rounded-2xl'
         )}
       >
         <div
