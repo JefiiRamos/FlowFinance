@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type TransitionEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus } from 'lucide-react'
+import { Plus, Bot } from 'lucide-react'
 import { clearAuth, getToken, getUser } from '@/lib/auth'
 import { isAuthenticated } from '@/lib/auth'
 import { TransactionsForm } from '@/components/transactions-form'
@@ -527,24 +527,26 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* FAB - botao grande Nova Transacao */}
-      <button
-        type="button"
-        onClick={() => {
-          if (section !== 'transacoes') {
-            setPendingOpenAdd(true)
-            setSection('transacoes')
-          } else {
-            openAddRef.current?.open()
-          }
-        }}
-        className="fixed bottom-28 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-[#7E8BFF] active:scale-95 lg:bottom-8 lg:right-8 lg:h-14 lg:w-14"
-        aria-label="Nova Transacao"
-      >
-        <Plus className="size-8" />
-      </button>
+      {/* Mobile: comportamento original — abre nova transação */}
+      {!lgUp && (
+        <button
+          type="button"
+          onClick={() => {
+            if (section !== 'transacoes') {
+              setPendingOpenAdd(true)
+              setSection('transacoes')
+            } else {
+              openAddRef.current?.open()
+            }
+          }}
+          className="fixed bottom-28 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-[#7E8BFF] active:scale-95"
+          aria-label="Nova Transacao"
+        >
+          <Plus className="size-8" />
+        </button>
+      )}
 
-      {assistantShellMounted && lgUp && (
+{assistantShellMounted && lgUp && (
         <>
           <button
             type="button"
@@ -574,6 +576,45 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+
+      {/* Desktop: FAB duplo — Assistente (padrão) + Nova Transação (hover) */}
+      {lgUp && (
+        <div className="group fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (section !== 'transacoes') {
+                setPendingOpenAdd(true)
+                setSection('transacoes')
+              } else {
+                openAddRef.current?.open()
+              }
+            }}
+            className={cn(
+              'flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-[#141924] text-foreground shadow-lg shadow-black/30 transition-all duration-200',
+              'translate-y-2 scale-90 opacity-0 pointer-events-none',
+              'group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto',
+              'group-focus-within:translate-y-0 group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto',
+              'hover:bg-[#1c2230]'
+            )}
+            aria-label="Nova transacao"
+            title="Nova transacao"
+          >
+            <Plus className="size-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleAssistant}
+            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-[#7E8BFF] active:scale-95"
+            aria-label="Assistente de gastos"
+            title="Assistente de gastos"
+          >
+            <Bot className="size-7" />
+          </button>
+        </div>
+      )}
+      
     </AppShell>
   )
 }

@@ -40,7 +40,7 @@ const ASSISTENTE_HREF = '/assistente'
 
 const SIDEBAR_ENTRIES: NavEntry[] = [
   { kind: 'section', id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
-  { kind: 'link', href: ASSISTENTE_HREF, label: 'Assistente', icon: MessageSquareText },
+  /* { kind: 'link', href: ASSISTENTE_HREF, label: 'Assistente', icon: MessageSquareText }, */
   { kind: 'section', id: 'transacoes', label: 'Transacoes', icon: Receipt },
   { kind: 'section', id: 'graficos', label: 'Graficos', icon: BarChart3 },
   { kind: 'section', id: 'metas', label: 'Metas', icon: Target },
