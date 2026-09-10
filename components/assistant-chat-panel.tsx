@@ -40,12 +40,12 @@ const WELCOME_MESSAGES: ChatLine[] = [
 
 const SUGGESTIONS = ['35 padaria', 'uber 18', '120 mercado hoje', '65 gasolina']
 
-const OVERLAY_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
-const OVERLAY_SHELL_MS = 300
-const OVERLAY_INNER_OPEN_MS = 190
-const OVERLAY_INNER_CLOSE_MS = 165
-const OVERLAY_INNER_OPEN_DELAY_MS = 78
-const OVERLAY_SHELL_CLOSE_DELAY_MS = 52
+const OVERLAY_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)' // curva estilo iOS sheet
+const OVERLAY_SHELL_MS = 420
+const OVERLAY_INNER_OPEN_MS = 320
+const OVERLAY_INNER_CLOSE_MS = 260
+const OVERLAY_INNER_OPEN_DELAY_MS = 90
+const OVERLAY_SHELL_CLOSE_DELAY_MS = 60
 
 function newId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -93,30 +93,34 @@ export function AssistantChatPanel({
   const open = isControlled ? Boolean(overlayMotionOpen) : true
 
   const overlayShellStyle: CSSProperties | undefined = isControlled
-    ? {
-        transformOrigin: 'bottom right',
-        willChange: 'transform, opacity, border-radius',
-        transform: open
-          ? 'scale(1) translate3d(0, 0, 0)'
-          : 'scale(0.13) translate3d(10px, 12px, 0)',
-        opacity: open ? 1 : 0,
-        borderRadius: open ? '1rem' : '9999px',
-        transition: open
-          ? `transform ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms, opacity ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms, border-radius ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms`
-          : `transform ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms, opacity ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms, border-radius ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms`,
-      }
-    : undefined
+  ? {
+      transformOrigin: 'bottom right',
+      willChange: 'transform, opacity, border-radius, filter',
+      transform: open
+        ? 'scale(1) translate3d(0, 0, 0)'
+        : 'scale(0.13) translate3d(10px, 12px, 0)',
+      opacity: open ? 1 : 0,
+      borderRadius: open ? '1.5rem' : '9999px',
+      filter: open ? 'blur(0px)' : 'blur(14px)',
+      backdropFilter: 'blur(28px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+      transition: open
+        ? `transform ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms, opacity ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms, border-radius ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms, filter ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} 0ms`
+        : `transform ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms, opacity ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms, border-radius ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms, filter ${OVERLAY_SHELL_MS}ms ${OVERLAY_EASE} ${OVERLAY_SHELL_CLOSE_DELAY_MS}ms`,
+    }
+  : undefined
 
   const overlayInnerStyle: CSSProperties | undefined = isControlled
-    ? {
-        willChange: 'transform, opacity',
-        transform: open ? 'translate3d(0, 0, 0)' : 'translate3d(0, 12px, 0)',
-        opacity: open ? 1 : 0,
-        transition: open
-          ? `opacity ${OVERLAY_INNER_OPEN_MS}ms ${OVERLAY_EASE} ${OVERLAY_INNER_OPEN_DELAY_MS}ms, transform ${OVERLAY_INNER_OPEN_MS}ms ${OVERLAY_EASE} ${OVERLAY_INNER_OPEN_DELAY_MS}ms`
-          : `opacity ${OVERLAY_INNER_CLOSE_MS}ms ${OVERLAY_EASE} 0ms, transform ${OVERLAY_INNER_CLOSE_MS}ms ${OVERLAY_EASE} 0ms`,
-      }
-    : undefined
+  ? {
+      willChange: 'transform, opacity, filter',
+      transform: open ? 'translate3d(0, 0, 0) scale(1)' : 'translate3d(0, 14px, 0) scale(0.98)',
+      opacity: open ? 1 : 0,
+      filter: open ? 'blur(0px)' : 'blur(6px)',
+      transition: open
+        ? `opacity ${OVERLAY_INNER_OPEN_MS}ms ${OVERLAY_EASE} ${OVERLAY_INNER_OPEN_DELAY_MS}ms, transform ${OVERLAY_INNER_OPEN_MS}ms ${OVERLAY_EASE} ${OVERLAY_INNER_OPEN_DELAY_MS}ms, filter ${OVERLAY_INNER_OPEN_MS}ms ${OVERLAY_EASE} ${OVERLAY_INNER_OPEN_DELAY_MS}ms`
+        : `opacity ${OVERLAY_INNER_CLOSE_MS}ms ${OVERLAY_EASE} 0ms, transform ${OVERLAY_INNER_CLOSE_MS}ms ${OVERLAY_EASE} 0ms, filter ${OVERLAY_INNER_CLOSE_MS}ms ${OVERLAY_EASE} 0ms`,
+    }
+  : undefined
 
     const send = useCallback(async () => {
       const text = draft.trim()
@@ -227,7 +231,7 @@ export function AssistantChatPanel({
     <div
       className={cn(
         'flex shrink-0 items-center gap-3 border-white/10 px-3 py-3 backdrop-blur-xl',
-        isOverlay ? 'rounded-t-2xl border-b bg-card' : 'border-b bg-card'
+        isOverlay ? 'rounded-t-2xl border-b bg-white/[0.04]' : 'border-b bg-card'
       )}
     >
       {showBackLink && !isOverlay && (
