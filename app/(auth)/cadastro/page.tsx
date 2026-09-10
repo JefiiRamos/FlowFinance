@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { AuthField, authInputClassName } from '@/components/auth/auth-field'
+import { toast } from 'sonner'
 
 export default function CadastroPage() {
   const router = useRouter()
@@ -48,6 +49,9 @@ export default function CadastroPage() {
 
       router.push('/login?cadastro=ok')
       router.refresh()
+      toast.success('Cadastro realizado!', {
+        description: `Bem-vindo(a), ${data.user?.name ?? 'usuário'}!`,
+      })
     } catch {
       setError('Erro ao cadastrar')
     } finally {
