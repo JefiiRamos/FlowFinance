@@ -1,7 +1,11 @@
 'use client'
 
-import { Solution } from '@/components/landing/solution'
+import { Audience } from '@/components/landing/audience'
+import { Cta } from '@/components/landing/cta'
+import { Features } from '@/components/landing/features'
 import { Problem } from '@/components/landing/problem'
+import { Showcase } from '@/components/landing/showcase'
+import { Solution } from '@/components/landing/solution'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
@@ -108,6 +112,14 @@ export default function LPPage() {
           <Problem />
 
           <Solution />
+
+          <Features />
+
+          <Showcase />
+
+          <Audience />
+
+          <Cta />
 
           {/*
           =========================================================================
