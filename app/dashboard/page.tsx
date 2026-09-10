@@ -334,12 +334,12 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <PeriodFilter
+          {/* <PeriodFilter
             value={period}
             onChange={setPeriod}
             customRange={customRange}
             onCustomRangeChange={setCustomRange}
-          />
+          /> */}
         </div>
 
         {section === 'inicio' && (
@@ -431,7 +431,7 @@ export default function DashboardPage() {
             <div className="min-w-0 flex-1 space-y-5">
               <div className="flex flex-wrap items-center justify-end gap-3">
                 <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280] sm:mr-auto">Filtrar</span>
-                <PeriodFilter value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} />
+                {/* <PeriodFilter value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} /> */}
               </div>
               <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
                 <TransactionsTable transactions={filteredTransactions} onEdit={(t) => setEditingTransaction(t)} onDelete={removeTransaction} />
