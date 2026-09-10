@@ -595,7 +595,7 @@ export default function DashboardPage() {
               'translate-y-2 scale-90 opacity-0 pointer-events-none',
               'group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 group-hover:pointer-events-auto',
               'group-focus-within:translate-y-0 group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto',
-              'hover:bg-[#1c2230]'
+              'hover:bg-[#1c2230] cursor-pointer'
             )}
             aria-label="Nova transacao"
             title="Nova transacao"
@@ -606,7 +606,7 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={toggleAssistant}
-            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-[#7E8BFF] active:scale-95"
+            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-[#7E8BFF] active:scale-95 cursor-pointer"
             aria-label="Assistente de gastos"
             title="Assistente de gastos"
           >

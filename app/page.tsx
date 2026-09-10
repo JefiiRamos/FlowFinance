@@ -92,7 +92,7 @@ export default function LPPage() {
             <Link href="/login">
               <Button
                 variant="outline"
-                className="border-white/10"
+                className="border-white/10 cursor-pointer"
               >
                 Entrar
               </Button>

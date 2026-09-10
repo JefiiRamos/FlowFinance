@@ -122,7 +122,7 @@ export function Cta() {
               <Link href="/login">
                 <Button
                   size="lg"
-                  className="h-12 rounded-full px-8 text-base"
+                  className="h-12 rounded-full px-8 text-base cursor-pointer"
                 >
                   Criar conta gratuita
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -133,7 +133,7 @@ export function Cta() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="h-12 rounded-full border-white/10 bg-white/5 px-8 backdrop-blur-xl transition-all hover:bg-white/10"
+                  className="h-12 rounded-full border-white/10 bg-white/5 px-8 backdrop-blur-xl transition-all hover:bg-white/10 cursor-pointer"
                 >
                   Já tenho conta
                 </Button>

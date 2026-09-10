@@ -76,7 +76,7 @@ export function AppShell({
   const user = getUser()
 
   const navRowClass =
-    'group flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-300 hover:translate-x-1'
+    'group flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-300 hover:translate-x-1'
 
   const activeClass = 'border border-primary/20 bg-primary/10 text-white shadow-lg shadow-black/20'
   const idleClass = 'border border-transparent text-[#A1A7B3] hover:bg-white/[0.04] hover:text-white'
@@ -105,7 +105,7 @@ export function AppShell({
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className={cn(
-              'flex size-9 items-center justify-center rounded-xl text-[#A1A7B3] transition-all duration-300 hover:bg-white/[0.04] hover:text-white',
+              'flex size-9 cursor-pointer items-center justify-center rounded-xl text-[#A1A7B3] transition-all duration-300 hover:bg-white/[0.04] hover:text-white',
               !sidebarOpen && 'absolute -right-3 top-5 border border-white/5 bg-[#141924]'
             )}
             aria-label={sidebarOpen ? 'Recolher menu' : 'Expandir menu'}
@@ -189,7 +189,7 @@ export function AppShell({
             type="button"
             onClick={onLogout}
             className={cn(
-              'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-[#A1A7B3] transition-all duration-300 hover:bg-red-500/10 hover:text-red-400',
+              'flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-[#A1A7B3] transition-all duration-300 hover:bg-red-500/10 hover:text-red-400',
               !sidebarOpen && 'justify-center px-0'
             )}
           >
@@ -208,7 +208,7 @@ export function AppShell({
         <header className="sticky top-0 z-30 flex shrink-0 items-center justify-end gap-2 border-b border-white/5 bg-[#090B10]/80 px-4 py-3 backdrop-blur-xl lg:hidden">
           <button
             type="button"
-            className="flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-all duration-300 hover:bg-white/[0.04] hover:text-foreground"
+            className="flex size-10 cursor-pointer items-center justify-center rounded-xl text-muted-foreground transition-all duration-300 hover:bg-white/[0.04] hover:text-foreground"
             aria-label="Perfil"
           >
             <User className="size-5" />
@@ -216,7 +216,7 @@ export function AppShell({
           <button
             type="button"
             onClick={onLogout}
-            className="flex size-10 items-center justify-center rounded-xl text-muted-foreground transition-all duration-300 hover:bg-red-500/10 hover:text-red-400"
+            className="flex size-10 cursor-pointer items-center justify-center rounded-xl text-muted-foreground transition-all duration-300 hover:bg-red-500/10 hover:text-red-400"
             aria-label="Sair"
           >
             <LogOut className="size-5" />
@@ -236,7 +236,7 @@ export function AppShell({
                   key={entry.href}
                   href={entry.href}
                   className={cn(
-                    'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-300 sm:text-xs',
+                    'flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-300 sm:text-xs',
                     isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/[0.04] hover:text-white'
                   )}
                   aria-current={isActive ? 'page' : undefined}
@@ -254,7 +254,7 @@ export function AppShell({
                 type="button"
                 onClick={() => onSectionChange(entry.id)}
                 className={cn(
-                  'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-300 sm:text-xs',
+                  'flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-300 sm:text-xs',
                   isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/[0.04] hover:text-white'
                 )}
               >

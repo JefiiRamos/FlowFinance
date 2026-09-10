@@ -106,7 +106,7 @@ export default function CadastroPage() {
 
       <Button
         type="submit"
-        className="mt-2 h-12 w-full rounded-2xl text-base shadow-[0_20px_40px_rgba(99,102,241,0.25)]"
+        className="mt-2 h-12 w-full rounded-2xl text-base shadow-[0_20px_40px_rgba(99,102,241,0.25)] cursor-pointer"
         size="lg"
         disabled={loading}
       >
