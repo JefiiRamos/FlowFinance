@@ -171,7 +171,7 @@ export function TransactionsForm({ transactions, onAdd, onEdit, onDelete, isLoad
   return (
     <div className="flex h-full flex-col">
       <div className="shrink-0 px-4 pt-4">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Transacoes</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Transações</h3>
         <p className="mt-2 text-sm font-medium text-[#A1A7B3]">Recebimentos e gastos</p>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">

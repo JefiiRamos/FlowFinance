@@ -11,12 +11,10 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  MessageSquareText,
   Receipt,
   Repeat,
   Target,
   User,
-  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -29,7 +27,6 @@ export type NavSection =
   | 'metas'
   | 'simulador'
   | 'despesas-fixas'
-  | 'contas'
   | 'relatorios'
 
 type NavEntry =
@@ -39,18 +36,16 @@ type NavEntry =
 const ASSISTENTE_HREF = '/assistente'
 
 const SIDEBAR_ENTRIES: NavEntry[] = [
-  { kind: 'section', id: 'inicio', label: 'Inicio', icon: LayoutDashboard },
-  /* { kind: 'link', href: ASSISTENTE_HREF, label: 'Assistente', icon: MessageSquareText }, */
-  { kind: 'section', id: 'transacoes', label: 'Transacoes', icon: Receipt },
-  { kind: 'section', id: 'graficos', label: 'Graficos', icon: BarChart3 },
+  { kind: 'section', id: 'inicio', label: 'Início', icon: LayoutDashboard },
+  { kind: 'section', id: 'transacoes', label: 'Transações', icon: Receipt },
+  { kind: 'section', id: 'graficos', label: 'Gráficos', icon: BarChart3 },
   { kind: 'section', id: 'metas', label: 'Metas', icon: Target },
   { kind: 'section', id: 'simulador', label: 'Simulador', icon: FlaskConical },
-  { kind: 'section', id: 'despesas-fixas', label: 'Fixas', icon: Repeat },
-  { kind: 'section', id: 'contas', label: 'Contas', icon: Wallet },
-  { kind: 'section', id: 'relatorios', label: 'Relatorios', icon: FileBarChart },
+  { kind: 'section', id: 'despesas-fixas', label: 'Recorrências', icon: Repeat },
+  { kind: 'section', id: 'relatorios', label: 'Relatórios', icon: FileBarChart },
 ]
 
-const MOBILE_TAB_ENTRIES = SIDEBAR_ENTRIES.slice(0, 6)
+const MOBILE_TAB_ENTRIES = SIDEBAR_ENTRIES
 
 interface AppShellProps {
   section: NavSection
@@ -76,9 +71,9 @@ export function AppShell({
   const user = getUser()
 
   const navRowClass =
-    'group flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-300 hover:translate-x-1'
+    'group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors duration-200'
 
-  const activeClass = 'border border-primary/20 bg-primary/10 text-white shadow-lg shadow-black/20'
+  const activeClass = 'border border-primary/20 bg-primary/10 text-white'
   const idleClass = 'border border-transparent text-[#A1A7B3] hover:bg-white/[0.04] hover:text-white'
 
   return (
@@ -97,7 +92,7 @@ export function AppShell({
             {sidebarOpen && (
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-white">FlowFinance</p>
-                <p className="truncate text-xs font-medium text-[#6B7280]">Premium finance</p>
+                <p className="truncate text-xs font-medium text-[#6B7280]">Painel financeiro</p>
               </div>
             )}
           </div>
@@ -179,7 +174,7 @@ export function AppShell({
             </div>
             {sidebarOpen && (
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">{user?.name ?? 'Usuario'}</p>
+                <p className="truncate text-sm font-semibold text-white">{user?.name ?? 'Usuário'}</p>
                 <p className="truncate text-xs font-medium text-[#6B7280]">Conta ativa</p>
               </div>
             )}
@@ -225,7 +220,7 @@ export function AppShell({
 
         <main className="flex-1 overflow-y-auto">{children}</main>
 
-        <nav className="fixed bottom-3 left-3 right-3 z-40 flex items-center justify-around rounded-2xl border border-white/5 bg-[#0F131C]/90 p-2 shadow-2xl shadow-black/20 backdrop-blur-xl lg:hidden">
+        <nav className="fixed bottom-3 left-3 right-3 z-40 flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/5 bg-[#0F131C]/90 p-2 shadow-2xl shadow-black/20 backdrop-blur-xl lg:hidden">
           {MOBILE_TAB_ENTRIES.map((entry) => {
             const Icon = entry.icon
 
@@ -236,7 +231,7 @@ export function AppShell({
                   key={entry.href}
                   href={entry.href}
                   className={cn(
-                    'flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-300 sm:text-xs',
+                    'flex min-w-[72px] flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-colors duration-200 sm:text-xs',
                     isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/[0.04] hover:text-white'
                   )}
                   aria-current={isActive ? 'page' : undefined}
@@ -254,7 +249,7 @@ export function AppShell({
                 type="button"
                 onClick={() => onSectionChange(entry.id)}
                 className={cn(
-                  'flex min-w-0 flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-all duration-300 sm:text-xs',
+                  'flex min-w-[72px] flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-semibold transition-colors duration-200 sm:text-xs',
                   isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/[0.04] hover:text-white'
                 )}
               >

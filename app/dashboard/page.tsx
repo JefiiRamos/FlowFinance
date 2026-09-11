@@ -14,7 +14,6 @@ import {
   getProjectedEndOfMonthBalance,
 } from '@/lib/finance'
 import { useTransactions } from '@/hooks/use-transactions'
-import dynamic from 'next/dynamic'
 import { IncomeChartCompact } from '@/components/income-chart-compact'
 import { IncomeVsSpendingChart } from '@/components/income-vs-spending-chart'
 import { CashFlowCards } from '@/components/cash-flow-cards'
@@ -37,9 +36,8 @@ import { useLgUp } from '@/hooks/use-lg-up'
 import type { Transaction } from '@/lib/finance'
 import { addDays, endOfDay, endOfMonth, startOfDay, startOfMonth, subMonths } from 'date-fns'
 
-const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.Grainient), {
-  ssr: false,
-})
+const panelClass = 'rounded-2xl border border-white/6 bg-[#10131A] p-5'
+const elevatedPanelClass = 'rounded-2xl border border-white/6 bg-[#10131A] p-5 sm:p-6'
 
 function getDateRangeForPeriod(
   value: PeriodValue,
@@ -289,8 +287,8 @@ export default function DashboardPage() {
     [transactions]
   )
 
-  // Quando o usuÃ¡rio clica no FAB em outra aba, trocamos para "transacoes"
-  // e abrimos o modal assim que o formulÃ¡rio estiver montado.
+  // Quando o usuário clica no FAB em outra aba, trocamos para "transações"
+  // e abrimos o modal assim que o formulário estiver montado.
   useEffect(() => {
     if (section === 'transacoes' && pendingOpenAdd && openAddRef.current) {
       openAddRef.current.open()
@@ -319,14 +317,14 @@ export default function DashboardPage() {
 
       <div className="mx-auto w-full max-w-[1700px] space-y-8 p-5 sm:p-6 lg:p-8">
 
-        <div className="sticky top-0 z-20 flex flex-col gap-5 rounded-2xl border border-white/5 bg-[#0F131C]/85 px-5 py-5 shadow-lg shadow-black/20 backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between lg:px-6">
-          {/* HEADER DAS SEÃ‡Ã•ES */}
+        <div className="sticky top-0 z-20 flex flex-col gap-5 rounded-2xl border border-white/6 bg-[#10131A]/95 px-5 py-5 lg:flex-row lg:items-center lg:justify-between lg:px-6">
+          {/* Cabeçalho das seções */}
           <div className="min-w-0">
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">
               {currentDateLabel}
             </p>
             <h1 className="text-4xl font-semibold tracking-normal text-white">
-              {greeting}, {user?.name ?? 'Usuario'}
+              {greeting}, {user?.name ?? 'Usuário'}
             </h1>
 
             <p className="mt-2 text-sm font-medium text-[#A1A7B3]">
@@ -361,16 +359,16 @@ export default function DashboardPage() {
               {/* LADO ESQUERDO */}
               <div className="space-y-5">
 
-                <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
+                <div className={elevatedPanelClass}>
                   <IncomeVsSpendingChart summary={summary} />
                 </div>
 
                 <div className="grid gap-5 lg:grid-cols-2">
-                  <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
+                  <div className={elevatedPanelClass}>
                     <ExpensesPieChart transactions={transactions} />
                   </div>
 
-                  <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
+                  <div className={elevatedPanelClass}>
                     <AccumulatedChart summary={summary} />
                   </div>
                 </div>
@@ -379,7 +377,7 @@ export default function DashboardPage() {
               {/* PAINEL LATERAL */}
               <div className="space-y-5">
 
-                <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924] sm:p-6">
+                <div className={elevatedPanelClass}>
                   <FinancialIntelligence
                     transactions={transactions}
                     monthlyExpenses={monthlyExpenses}
@@ -416,7 +414,7 @@ export default function DashboardPage() {
 
         {section === 'transacoes' && (
           <div className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[300px_1fr]">
-            <div className="flex shrink-0 flex-col overflow-hidden rounded-2xl border border-white/5 bg-[#0F131C]/90 shadow-lg shadow-black/20 backdrop-blur-xl lg:sticky lg:top-28 lg:h-fit">
+            <div className="flex shrink-0 flex-col overflow-hidden rounded-2xl border border-white/6 bg-[#10131A] lg:sticky lg:top-28 lg:h-fit">
               <TransactionsForm
                 transactions={transactions}
                 onAdd={addTransaction}
@@ -433,7 +431,7 @@ export default function DashboardPage() {
                 <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280] sm:mr-auto">Filtrar</span>
                 {/* <PeriodFilter value={period} onChange={setPeriod} customRange={customRange} onCustomRangeChange={setCustomRange} /> */}
               </div>
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
+              <div className={panelClass}>
                 <TransactionsTable transactions={filteredTransactions} onEdit={(t) => setEditingTransaction(t)} onDelete={removeTransaction} />
               </div>
             </div>
@@ -443,23 +441,23 @@ export default function DashboardPage() {
         {section === 'graficos' && (
           <div className="space-y-5">
             <div className="grid gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <ExpensesPieChart transactions={transactions} />
               </div>
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <AccumulatedChart summary={summary} />
               </div>
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <IncomeVsSpendingChart summary={summary} />
               </div>
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <IncomeChartCompact summary={summary} />
               </div>
             </div>
-            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Comparacao mensal</h3>
+            <div className={panelClass}>
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Comparação mensal</h3>
               <CashFlowCards summary={summary} />
             </div>
           </div>
@@ -471,10 +469,10 @@ export default function DashboardPage() {
 
         {section === 'metas' && (
           <div className="grid gap-5 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
+            <div className={panelClass}>
               <GoalsSection balance={balance} />
             </div>
-            <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
+            <div className={`${panelClass} overflow-hidden`}>
               <BudgetTable transactions={transactions} />
             </div>
           </div>
@@ -482,45 +480,39 @@ export default function DashboardPage() {
 
         {section === 'despesas-fixas' && (
           <div className="grid gap-5 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
+            <div className={panelClass}>
               <RecurringIncomeList />
             </div>
-            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl">
+            <div className={panelClass}>
               <RecurringExpensesList />
             </div>
-          </div>
-        )}
-
-        {section === 'contas' && (
-          <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-8 shadow-lg shadow-black/20 backdrop-blur-xl">
-            <p className="text-center text-muted-foreground">Contas e carteiras em breve.</p>
           </div>
         )}
 
         {section === 'relatorios' && (
           <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-xl font-semibold text-foreground">Analise e exportacao</h3>
+              <h3 className="text-xl font-semibold text-foreground">Análise e exportação</h3>
               <ExportReportsButton transactions={transactions} />
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <ExpensesPieChart transactions={transactions} />
               </div>
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <AccumulatedChart summary={summary} />
               </div>
             </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <IncomeVsSpendingChart summary={summary} />
               </div>
-              <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
+              <div className={panelClass}>
                 <IncomeChartCompact summary={summary} />
               </div>
             </div>
-            <div className="rounded-2xl border border-white/5 bg-[#0F131C]/90 p-5 shadow-lg shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#141924]">
-              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Comparacao mensal</h3>
+            <div className={panelClass}>
+              <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#6B7280]">Comparação mensal</h3>
               <CashFlowCards summary={summary} />
             </div>
           </div>
@@ -540,7 +532,7 @@ export default function DashboardPage() {
             }
           }}
           className="fixed bottom-28 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-black/20 transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.01] hover:bg-[#7E8BFF] active:scale-95"
-          aria-label="Nova Transacao"
+          aria-label="Nova transação"
         >
           <Plus className="size-8" />
         </button>
@@ -597,8 +589,8 @@ export default function DashboardPage() {
               'group-focus-within:translate-y-0 group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:pointer-events-auto',
               'hover:bg-[#1c2230] cursor-pointer'
             )}
-            aria-label="Nova transacao"
-            title="Nova transacao"
+            aria-label="Nova transação"
+            title="Nova transação"
           >
             <Plus className="size-5" />
           </button>
