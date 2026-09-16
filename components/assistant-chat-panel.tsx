@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
-import { getToken } from '@/lib/auth'
+import { getToken, getUser } from '@/lib/auth'
 import {
   AnalyzingCard,
   ResultCard,
@@ -39,6 +39,13 @@ const WELCOME_MESSAGES: ChatLine[] = [
 ]
 
 const SUGGESTIONS = ['35 padaria', 'uber 18', '120 mercado hoje', '65 gasolina']
+
+const EXAMPLE_PROMPTS = [
+  'Quanto eu posso gastar essa semana?',
+  'Registre R$ 45 de almoço com cliente hoje.',
+  'Onde eu mais gastei neste mês?',
+  'Crie uma meta para minha reserva de emergência.',
+]
 
 const OVERLAY_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)' // curva estilo iOS sheet
 const OVERLAY_SHELL_MS = 420
@@ -80,14 +87,78 @@ export function AssistantChatPanel({
   onTransactionCreated,
 }: AssistantChatPanelProps) {
   const isOverlay = layout === 'overlay'
-  const [messages, setMessages] = useState<ChatLine[]>(WELCOME_MESSAGES)
+  const [messages, setMessages] = useState<ChatLine[]>(isOverlay ? WELCOME_MESSAGES : [])
   const [draft, setDraft] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [typedGreetingLength, setTypedGreetingLength] = useState(0)
+  const [typedExample, setTypedExample] = useState('')
+  const [exampleIndex, setExampleIndex] = useState(0)
+  const [isDeletingExample, setIsDeletingExample] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const user = getUser()
+  const firstName = user?.name?.trim().split(/\s+/)[0] || 'Jefferson'
+  const currentHour = new Date().getHours()
+  const greeting = currentHour < 12 ? 'Bom dia' : currentHour < 18 ? 'Boa tarde' : 'Boa noite'
+  const greetingIntro = `${greeting}, `
+  const greetingName = firstName
+  const greetingOutro = ', me diga como eu posso te ajudar hoje?'
+  const fullGreeting = `${greetingIntro}${greetingName}${greetingOutro}`
+  const typedGreeting = fullGreeting.slice(0, typedGreetingLength)
+  const typedIntro = typedGreeting.slice(0, Math.min(greetingIntro.length, typedGreeting.length))
+  const typedName = typedGreeting.slice(greetingIntro.length, Math.min(greetingIntro.length + greetingName.length, typedGreeting.length))
+  const typedOutro = typedGreeting.slice(greetingIntro.length + greetingName.length)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    if (isOverlay || messages.length > 0) return
+    setTypedGreetingLength(0)
+  }, [fullGreeting, isOverlay, messages.length])
+
+  useEffect(() => {
+    if (isOverlay || messages.length > 0 || typedGreetingLength >= fullGreeting.length) return
+
+    const lastTypedCharacter = fullGreeting[typedGreetingLength - 1]
+    const delay = typedGreetingLength === 0 ? 260 : lastTypedCharacter === ',' ? 220 : 58
+    const timeoutId = window.setTimeout(() => {
+      setTypedGreetingLength((current) => Math.min(current + 1, fullGreeting.length))
+    }, delay)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [fullGreeting, isOverlay, messages.length, typedGreetingLength])
+
+  useEffect(() => {
+    if (isOverlay || messages.length > 0) return
+
+    const currentExample = EXAMPLE_PROMPTS[exampleIndex]
+    const isComplete = typedExample === currentExample
+    const isEmpty = typedExample.length === 0
+    const delay = isComplete ? 1650 : isEmpty && isDeletingExample ? 420 : isDeletingExample ? 28 : 52
+
+    const timeoutId = window.setTimeout(() => {
+      if (!isDeletingExample) {
+        if (isComplete) {
+          setIsDeletingExample(true)
+          return
+        }
+
+        setTypedExample(currentExample.slice(0, typedExample.length + 1))
+        return
+      }
+
+      if (isEmpty) {
+        setIsDeletingExample(false)
+        setExampleIndex((current) => (current + 1) % EXAMPLE_PROMPTS.length)
+        return
+      }
+
+      setTypedExample(currentExample.slice(0, typedExample.length - 1))
+    }, delay)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [exampleIndex, isDeletingExample, isOverlay, messages.length, typedExample])
 
   const isControlled = overlayMotionOpen !== undefined
   const open = isControlled ? Boolean(overlayMotionOpen) : true
@@ -230,8 +301,10 @@ export function AssistantChatPanel({
   const header = (
     <div
       className={cn(
-        'flex shrink-0 items-center gap-3 border-white/10 px-3 py-3 backdrop-blur-xl',
-        isOverlay ? 'rounded-t-2xl border-b bg-white/[0.04]' : 'border-b bg-card'
+        'relative flex shrink-0 items-center gap-3 overflow-hidden border-white/10 px-3 py-3 backdrop-blur-xl',
+        isOverlay
+          ? 'rounded-t-2xl border-b bg-white/[0.04]'
+          : 'rounded-t-2xl border bg-card/80 shadow-[0_18px_70px_rgba(0,0,0,0.22)] before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-primary/45 before:to-transparent'
       )}
     >
       {showBackLink && !isOverlay && (
@@ -242,7 +315,8 @@ export function AssistantChatPanel({
         </Button>
       )}
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/25 to-fuchsia-500/20 shadow-inner sm:size-10">
+        <div className="relative flex size-9 shrink-0 items-center justify-center rounded-xl border border-violet-500/30 bg-gradient-to-br from-violet-500/25 to-fuchsia-500/20 shadow-inner sm:size-10">
+          <span className="absolute inset-0 rounded-xl bg-primary/20 blur-md opacity-40" aria-hidden />
           <Bot className="size-4 text-violet-300 sm:size-5" />
         </div>
         <div className="min-w-0">
@@ -265,7 +339,7 @@ export function AssistantChatPanel({
         </Button>
       )}
       {!isOverlay && (
-        <span className="hidden shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:inline-flex">
+        <span className="hidden shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground shadow-inner sm:inline-flex">
           <Sparkles className="size-3 text-fuchsia-400" />
           Bot ativo
         </span>
@@ -273,23 +347,59 @@ export function AssistantChatPanel({
     </div>
   )
 
-  const notice = !isOverlay && (
-    <div className="mb-3 shrink-0 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 backdrop-blur-xl">
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        O assistente interpreta frases curtas e registra despesas e receitas na sua conta. Seja explícito com valores e datas
-        quando quiser que algo entre no extrato.
-      </p>
-    </div>
-  )
+  // const notice = !isOverlay && (
+  //   <div className="mb-3 shrink-0 rounded-xl border border-white/10 bg-black/25 px-3 py-2.5 shadow-inner backdrop-blur-xl">
+  //     <p className="text-xs leading-relaxed text-muted-foreground">
+  //       O assistente interpreta frases curtas e registra despesas e receitas na sua conta. Seja explícito com valores e datas
+  //       quando quiser que algo entre no extrato.
+  //     </p>
+  //   </div>
+  // )
 
   const scrollClass = isOverlay
     ? 'h-[calc(100vh-280px)] flex-1 rounded-xl border border-border bg-background'
-    : 'h-[min(52vh,420px)] shrink-0 rounded-xl border border-white/10 bg-black/20 shadow-inner backdrop-blur-xl sm:h-[min(56vh,480px)]'
+    : 'min-h-[42vh] flex-1 rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(0,0,0,0.16))] shadow-inner backdrop-blur-xl'
 
   const body = (
     <>
-      {notice}
+      {/* {notice} */}
       <ScrollArea className={scrollClass}>
+        {messages.length === 0 && !isOverlay ? (
+          <div className="flex min-h-[42vh] items-center justify-center p-5 text-center sm:p-8">
+            <motion.div
+              initial={{ opacity: 0, y: 14, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="relative max-w-3xl"
+            >
+              <div
+                className="pointer-events-none absolute inset-x-10 -top-10 h-24 rounded-full bg-primary/10 blur-3xl"
+                aria-hidden
+              />
+              <p className="relative min-h-[7rem] text-balance text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-4xl lg:text-5xl">
+                <span>{typedIntro}</span>
+                {typedName && (
+                  <span className="font-serif italic text-transparent bg-clip-text bg-gradient-to-r from-white via-primary to-fuchsia-300">
+                    {typedName}
+                  </span>
+                )}
+                <span>{typedOutro}</span>
+                <span
+                  className="ml-1 inline-block h-[1em] w-px translate-y-1 bg-primary align-baseline shadow-[0_0_18px_rgba(110,124,255,0.85)] animate-pulse"
+                  aria-hidden
+                />
+              </p>
+              <div className="relative mx-auto mt-5 flex min-h-10 max-w-2xl items-center justify-center rounded-full  px-4 py-2.5 text-sm leading-relaxed text-muted-foreground shadow-inner backdrop-blur-xl sm:text-base">
+                
+                <span className="text-foreground/90">{typedExample}</span>
+                <span
+                  className="ml-1 inline-block h-[1em] w-px translate-y-0.5 bg-primary shadow-[0_0_16px_rgba(110,124,255,0.75)] animate-pulse"
+                  aria-hidden
+                />
+              </div>
+            </motion.div>
+          </div>
+        ) : (
         <div className="space-y-3 p-3 sm:space-y-4 sm:p-4">
           <AnimatePresence initial={false}>
             {messages.map((m) => {
@@ -315,6 +425,7 @@ export function AssistantChatPanel({
                   layout
                   initial={{ opacity: 0, y: 12, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
+                  whileHover={!isOverlay ? { y: -1 } : undefined}
                   transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                   className={cn('flex gap-2', m.role === 'user' ? 'flex-row-reverse' : 'flex-row sm:gap-2.5')}
                 >
@@ -322,8 +433,8 @@ export function AssistantChatPanel({
                     className={cn(
                       'flex size-7 shrink-0 items-center justify-center rounded-lg border sm:size-8',
                       m.role === 'user'
-                        ? 'border-cyan-500/25 bg-cyan-500/15'
-                        : 'border-violet-500/25 bg-violet-500/15'
+                        ? 'border-cyan-500/25 bg-cyan-500/15 shadow-[0_0_24px_rgba(34,211,238,0.08)]'
+                        : 'border-violet-500/25 bg-violet-500/15 shadow-[0_0_24px_rgba(139,92,246,0.1)]'
                     )}
                     aria-hidden
                   >
@@ -338,8 +449,8 @@ export function AssistantChatPanel({
                       className={cn(
                         'inline-block rounded-2xl px-3 py-2 text-[13px] leading-relaxed shadow-sm sm:px-3.5 sm:py-2.5 sm:text-sm',
                         m.role === 'user'
-                          ? 'rounded-tr-md bg-primary text-primary-foreground text-foreground ring-1 ring-cyan-500/20'
-                          : 'rounded-tl-md bg-muted text-foreground'
+                          ? 'rounded-tr-md bg-primary text-primary-foreground text-foreground ring-1 ring-cyan-500/20 shadow-[0_12px_34px_rgba(110,124,255,0.18)]'
+                          : 'rounded-tl-md bg-muted/90 text-foreground ring-1 ring-white/5'
                       )}
                     >
                       {m.body}
@@ -354,6 +465,7 @@ export function AssistantChatPanel({
           </AnimatePresence>
           <div ref={bottomRef} />
         </div>
+        )}
       </ScrollArea>
 
       <div className={cn('mt-2 space-y-1.5 sm:mt-3 sm:space-y-2', isOverlay && 'shrink-0')}>
@@ -364,7 +476,7 @@ export function AssistantChatPanel({
               key={s}
               type="button"
               onClick={() => setDraft(s)}
-              className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-foreground transition-colors hover:border-violet-500/30 hover:bg-violet-500/10 sm:px-3 sm:py-1.5 sm:text-xs"
+              className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-500/30 hover:bg-violet-500/10 hover:shadow-[0_10px_28px_rgba(110,124,255,0.12)] active:translate-y-0 sm:px-3 sm:py-1.5 sm:text-xs"
             >
               {s}
             </button>
@@ -372,7 +484,7 @@ export function AssistantChatPanel({
         </div>
       </div>
 
-      <div className="mt-3 rounded-lg border border-border bg-card p-3 sm:mt-3 sm:p-3">
+      <div className="mt-3 rounded-2xl border border-border bg-card/95 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.22)] transition-all duration-200 focus-within:border-primary/35 focus-within:shadow-[0_18px_70px_rgba(110,124,255,0.16)] sm:mt-3 sm:p-3">
         <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -385,13 +497,13 @@ export function AssistantChatPanel({
           placeholder="Ex.: 45 almoço com cliente"
           rows={isOverlay ? 2 : 2}
           disabled={isSending}
-          className="min-h-[3.5rem] resize-none border-white/10 bg-black/20 text-sm sm:min-h-[4.5rem]"
+          className="min-h-[3.5rem] resize-none rounded-xl border-white/10 bg-black/20 text-sm transition-colors focus-visible:ring-primary/25 sm:min-h-[4.5rem]"
         />
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 sm:mt-2">
           <span className="text-[10px] text-muted-foreground sm:text-[11px]">
             {isSending ? 'Processando…' : 'Enter envia · Shift+Enter nova linha'}
           </span>
-          <Button type="button" size="sm" className="gap-1.5 rounded-lg" onClick={() => void send()} disabled={isSending}>
+          <Button type="button" size="sm" className="gap-1.5 rounded-xl shadow-[0_10px_28px_rgba(110,124,255,0.22)] transition-transform active:scale-[0.98]" onClick={() => void send()} disabled={isSending}>
             {isSending ? <Loader2 className="size-4 animate-spin" /> : <SendHorizonal className="size-4" />}
             Enviar
           </Button>
@@ -426,9 +538,14 @@ export function AssistantChatPanel({
   }
 
   return (
-    <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-3 pb-4 pt-2 md:px-4">
+    <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-1 flex-col px-3 py-4 sm:px-5 lg:px-8 lg:py-8">
+      <div className="pointer-events-none absolute inset-x-10 top-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
       {header}
-      <main className="flex min-h-0 flex-1 flex-col">{body}</main>
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl border-x border-b border-white/10 bg-card/70 p-3 shadow-2xl shadow-black/25 backdrop-blur-xl before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(110,124,255,0.12),transparent_32%)] before:opacity-80 sm:p-4">
+        <div className="relative flex min-h-0 flex-1 flex-col">
+        {body}
+        </div>
+      </main>
     </div>
   )
 }

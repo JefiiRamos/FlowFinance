@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { isAuthenticated } from '@/lib/auth'
 import { AssistantChatPanel } from '@/components/assistant-chat-panel'
-import { useLgUp } from '@/hooks/use-lg-up'
 import { useTransactions } from '@/hooks/use-transactions'
 
 const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.Grainient), {
@@ -14,7 +13,6 @@ const Grainient = dynamic(() => import('@/components/grainient').then((m) => m.G
 
 export default function AssistentePage() {
   const router = useRouter()
-  const lgUp = useLgUp()
   const { refetch } = useTransactions()
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -26,11 +24,6 @@ export default function AssistentePage() {
     }
   }, [router])
 
-  useEffect(() => {
-    if (!authChecked || !lgUp) return
-    router.replace('/dashboard?assistant=1')
-  }, [authChecked, lgUp, router])
-
   if (!authChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -39,16 +32,8 @@ export default function AssistentePage() {
     )
   }
 
-  if (lgUp) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    )
-  }
-
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-background">
       <div className="fixed inset-0 -z-10">
         <Grainient
           color1="#7c3aed"
@@ -76,6 +61,14 @@ export default function AssistentePage() {
           className="h-full w-full"
         />
       </div>
+      <div
+        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_50%_18%,rgba(110,124,255,0.12),transparent_34%),linear-gradient(180deg,rgba(9,11,16,0.1),rgba(9,11,16,0.78))]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-48 bg-gradient-to-b from-white/[0.035] to-transparent"
+        aria-hidden
+      />
 
       <AssistantChatPanel layout="page" showBackLink onTransactionCreated={refetch} />
     </div>
