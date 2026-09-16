@@ -107,6 +107,7 @@ export function AssistantChatPanel({
   const typedIntro = typedGreeting.slice(0, Math.min(greetingIntro.length, typedGreeting.length))
   const typedName = typedGreeting.slice(greetingIntro.length, Math.min(greetingIntro.length + greetingName.length, typedGreeting.length))
   const typedOutro = typedGreeting.slice(greetingIntro.length + greetingName.length)
+  const isGreetingComplete = typedGreetingLength >= fullGreeting.length
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -121,7 +122,7 @@ export function AssistantChatPanel({
   }, [fullGreeting, isOverlay, messages.length])
 
   useEffect(() => {
-    if (isOverlay || messages.length > 0 || typedGreetingLength >= fullGreeting.length) return
+    if (isOverlay || messages.length > 0 || isGreetingComplete) return
 
     const lastTypedCharacter = fullGreeting[typedGreetingLength - 1]
     const delay = typedGreetingLength === 0 ? 260 : lastTypedCharacter === ',' ? 220 : 58
@@ -130,10 +131,10 @@ export function AssistantChatPanel({
     }, delay)
 
     return () => window.clearTimeout(timeoutId)
-  }, [fullGreeting, isOverlay, messages.length, typedGreetingLength])
+  }, [fullGreeting, isGreetingComplete, isOverlay, messages.length, typedGreetingLength])
 
   useEffect(() => {
-    if (isOverlay || messages.length > 0 || typedGreetingLength < fullGreeting.length) return
+    if (isOverlay || messages.length > 0 || !isGreetingComplete) return
 
     const currentExample = EXAMPLE_PROMPTS[exampleIndex]
     const isComplete = typedExample === currentExample
@@ -161,7 +162,7 @@ export function AssistantChatPanel({
     }, delay)
 
     return () => window.clearTimeout(timeoutId)
-  }, [exampleIndex, fullGreeting.length, isDeletingExample, isOverlay, messages.length, typedExample, typedGreetingLength])
+  }, [exampleIndex, isDeletingExample, isGreetingComplete, isOverlay, messages.length, typedExample])
 
   const isControlled = overlayMotionOpen !== undefined
   const open = isControlled ? Boolean(overlayMotionOpen) : true
@@ -389,14 +390,23 @@ export function AssistantChatPanel({
                   aria-hidden
                 />
               </p>
-              <div className="relative mx-auto mt-5 flex min-h-10 max-w-2xl items-center justify-center px-4 py-2.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
-                
-                <span className="text-foreground/90">{typedExample}</span>
-                <span
-                  className="ml-1 inline-block h-[1em] w-px translate-y-0.5 bg-primary shadow-[0_0_16px_rgba(110,124,255,0.75)] animate-pulse"
-                  aria-hidden
-                />
-              </div>
+              <AnimatePresence>
+                {isGreetingComplete && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    className="relative mx-auto mt-5 flex min-h-10 max-w-2xl items-center justify-center px-4 py-2.5 text-sm leading-relaxed text-muted-foreground sm:text-base"
+                  >
+                    <span className="text-foreground/90">{typedExample}</span>
+                    <span
+                      className="ml-1 inline-block h-[1em] w-px translate-y-0.5 bg-primary shadow-[0_0_16px_rgba(110,124,255,0.75)] animate-pulse"
+                      aria-hidden
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </div>
         ) : (
