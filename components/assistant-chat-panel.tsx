@@ -304,10 +304,10 @@ export function AssistantChatPanel({
   const header = (
     <div
       className={cn(
-        'relative flex shrink-0 items-center gap-3 overflow-hidden border-white/10 px-3 py-3 backdrop-blur-xl',
+        'relative flex shrink-0 items-center gap-3 overflow-hidden px-2 py-3 backdrop-blur-xl sm:px-3',
         isOverlay
           ? 'rounded-t-2xl border-b bg-white/[0.04]'
-          : 'rounded-t-2xl border bg-card/80 shadow-[0_18px_70px_rgba(0,0,0,0.22)] before:pointer-events-none before:absolute before:inset-x-8 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-primary/45 before:to-transparent'
+          : 'border-b border-white/[0.06] bg-transparent'
       )}
     >
       {showBackLink && !isOverlay && (
@@ -361,24 +361,21 @@ export function AssistantChatPanel({
 
   const scrollClass = isOverlay
     ? 'h-[calc(100vh-280px)] flex-1 rounded-xl border border-border bg-background'
-    : 'min-h-[42vh] flex-1 rounded-xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(0,0,0,0.16))] shadow-inner backdrop-blur-xl'
+    : 'min-h-[42vh] flex-1'
 
   const body = (
     <>
       {/* {notice} */}
       <ScrollArea className={scrollClass}>
         {messages.length === 0 && !isOverlay ? (
-          <div className="flex min-h-[42vh] items-center justify-center p-5 text-center sm:p-8">
+          <div className="flex min-h-[42vh] items-center justify-center px-3 py-8 text-center sm:px-8">
             <motion.div
               initial={{ opacity: 0, y: 14, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               className="relative max-w-3xl"
             >
-              <div
-                className="pointer-events-none absolute inset-x-10 -top-10 h-24 rounded-full bg-primary/10 blur-3xl"
-                aria-hidden
-              />
+              <div className="pointer-events-none absolute inset-x-12 top-1/2 h-28 -translate-y-1/2 rounded-full bg-primary/10 blur-3xl" aria-hidden />
               <p className="relative min-h-[7rem] text-balance text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-4xl lg:text-5xl">
                 <span>{typedIntro}</span>
                 {typedName && (
@@ -392,7 +389,7 @@ export function AssistantChatPanel({
                   aria-hidden
                 />
               </p>
-              <div className="relative mx-auto mt-5 flex min-h-10 max-w-2xl items-center justify-center rounded-full  px-4 py-2.5 text-sm leading-relaxed text-muted-foreground shadow-inner backdrop-blur-xl sm:text-base">
+              <div className="relative mx-auto mt-5 flex min-h-10 max-w-2xl items-center justify-center px-4 py-2.5 text-sm leading-relaxed text-muted-foreground sm:text-base">
                 
                 <span className="text-foreground/90">{typedExample}</span>
                 <span
@@ -471,23 +468,21 @@ export function AssistantChatPanel({
         )}
       </ScrollArea>
 
-      <div className={cn('mt-2 space-y-1.5 sm:mt-3 sm:space-y-2', isOverlay && 'shrink-0')}>
-        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-[11px]">Sugestões</p>
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+      <div className={cn('mt-2 flex flex-wrap items-center gap-1.5 sm:mt-3 sm:gap-2', isOverlay && 'shrink-0')}>
+        <p className="mr-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70 sm:text-[11px]">Sugestões</p>
           {SUGGESTIONS.map((s) => (
             <button
               key={s}
               type="button"
               onClick={() => setDraft(s)}
-              className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-500/30 hover:bg-violet-500/10 hover:shadow-[0_10px_28px_rgba(110,124,255,0.12)] active:translate-y-0 sm:px-3 sm:py-1.5 sm:text-xs"
+              className="rounded-full px-2.5 py-1 text-[11px] text-muted-foreground transition-all duration-200 hover:bg-white/[0.04] hover:text-foreground active:scale-[0.98] sm:px-3 sm:py-1.5 sm:text-xs"
             >
               {s}
             </button>
           ))}
-        </div>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-border bg-card/95 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.22)] transition-all duration-200 focus-within:border-primary/35 focus-within:shadow-[0_18px_70px_rgba(110,124,255,0.16)] sm:mt-3 sm:p-3">
+      <div className="mt-3 rounded-2xl bg-white/[0.035] p-3 transition-all duration-200 focus-within:bg-white/[0.05] sm:mt-3 sm:p-3">
         <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -500,7 +495,7 @@ export function AssistantChatPanel({
           placeholder="Ex.: 45 almoço com cliente"
           rows={isOverlay ? 2 : 2}
           disabled={isSending}
-          className="min-h-[3.5rem] resize-none rounded-xl border-white/10 bg-black/20 text-sm transition-colors focus-visible:ring-primary/25 sm:min-h-[4.5rem]"
+          className="min-h-[3.5rem] resize-none rounded-xl border-0 bg-transparent px-1 text-sm shadow-none transition-colors focus-visible:ring-0 sm:min-h-[4.5rem]"
         />
         <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 sm:mt-2">
           <span className="text-[10px] text-muted-foreground sm:text-[11px]">
@@ -542,9 +537,8 @@ export function AssistantChatPanel({
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-5xl flex-1 flex-col px-3 py-4 sm:px-5 lg:px-8 lg:py-8">
-      <div className="pointer-events-none absolute inset-x-10 top-6 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
       {header}
-      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl border-x border-b border-white/10 bg-card/70 p-3 shadow-2xl shadow-black/25 backdrop-blur-xl before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_0%,rgba(110,124,255,0.12),transparent_32%)] before:opacity-80 sm:p-4">
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent p-2 sm:p-3">
         <div className="relative flex min-h-0 flex-1 flex-col">
         {body}
         </div>
