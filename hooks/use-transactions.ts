@@ -30,7 +30,7 @@ export function useTransactions() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const refetch = useCallback(async (syncRecurring = true) => {
+  const refetch = useCallback(async (syncRecurring = false) => {
     setIsLoading(true)
     setError(null)
 
