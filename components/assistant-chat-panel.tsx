@@ -115,6 +115,9 @@ export function AssistantChatPanel({
   useEffect(() => {
     if (isOverlay || messages.length > 0) return
     setTypedGreetingLength(0)
+    setTypedExample('')
+    setExampleIndex(0)
+    setIsDeletingExample(false)
   }, [fullGreeting, isOverlay, messages.length])
 
   useEffect(() => {
@@ -130,7 +133,7 @@ export function AssistantChatPanel({
   }, [fullGreeting, isOverlay, messages.length, typedGreetingLength])
 
   useEffect(() => {
-    if (isOverlay || messages.length > 0) return
+    if (isOverlay || messages.length > 0 || typedGreetingLength < fullGreeting.length) return
 
     const currentExample = EXAMPLE_PROMPTS[exampleIndex]
     const isComplete = typedExample === currentExample
@@ -158,7 +161,7 @@ export function AssistantChatPanel({
     }, delay)
 
     return () => window.clearTimeout(timeoutId)
-  }, [exampleIndex, isDeletingExample, isOverlay, messages.length, typedExample])
+  }, [exampleIndex, fullGreeting.length, isDeletingExample, isOverlay, messages.length, typedExample, typedGreetingLength])
 
   const isControlled = overlayMotionOpen !== undefined
   const open = isControlled ? Boolean(overlayMotionOpen) : true
